@@ -632,6 +632,7 @@
     cards.appendChild(coverCard("Письмо", "off2"));
     cards.appendChild(coverCard("Баннер", "off3"));
     cover.appendChild(cards);
+    cover.appendChild(el("div", "cover-hint", "В заданиях можно нажимать на кнопки и смотреть, что происходит дальше."));
 
     var left = el("div", "intro-phone");
     left.appendChild(phoneFrame(cover, false));
