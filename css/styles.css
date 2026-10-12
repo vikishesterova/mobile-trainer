@@ -673,23 +673,29 @@ body {
 .story-send { width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, 0.22); display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; }
 
 /* многосторис — серия кадров с нумерацией */
-.story-list { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 18px 16px; overflow: auto; z-index: 2; }
+.story-series { flex: 1; display: flex; flex-direction: column; min-height: 0; z-index: 2; }
+.story-series-head {
+  flex: none; display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px 6px;
+}
+.story-series-head .story-ring { width: 34px; height: 34px; }
+.story-series-head .story-avatar { font-size: 16px; }
+.story-series-user { font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+.story-list { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 8px 16px 16px; overflow: auto; }
 .story-card { display: none; }
 .story-frame {
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 16px 18px 18px;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  border-radius: 16px;
+  padding: 12px 16px 14px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
 }
 .story-num {
   font-size: 12px; font-weight: 700; letter-spacing: 0.4px;
   color: rgba(255, 255, 255, 0.85); text-transform: uppercase;
 }
-.story-frame .story-ring { width: 34px; height: 34px; }
-.story-frame .story-avatar { font-size: 16px; }
-.story-frame .story-user { font-size: 14px; font-weight: 700; color: #fff; }
-.story-frame-text { font-size: 17px; color: #fff; line-height: 1.45; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }
+.story-frame .story-ring, .story-frame .story-user { display: none; }
+.story-frame-text { font-size: 16px; color: #fff; line-height: 1.45; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }
 
 /* landing — мобильная страница */
 .landing-bar { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 16px 6px; }
@@ -2109,7 +2115,10 @@ body {
   background: #f3eff9; border-radius: 999px; padding: 4px 10px; flex: none;
 }
 .bs-example-label { font-size: 14px; font-weight: 700; color: #686273; margin: 14px 0 10px; }
-.bs-example { margin-top: 10px; }
+.bs-example { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.bs-example .ex-title { font-size: 16px; font-weight: 700; color: #292633; line-height: 1.4; }
+.bs-example .bs-text { margin: 0; }
+.bs-example .ex-cta { font-size: 14px; font-weight: 700; color: #397a52; margin-top: 4px; }
 
 /* опрос: подписи шкалы */
 .survey-scale { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; }

@@ -297,12 +297,6 @@
     var sub = subText(sd);
     if (sub) notif.appendChild(el("div", "push-line", sub));
     screen.appendChild(notif);
-    if (sd.action) {
-      var action = el("div", "push-action");
-      action.appendChild(el("span", "push-action-label", "Действие при нажатии"));
-      action.appendChild(el("span", "push-action-text", sd.action));
-      screen.appendChild(action);
-    }
     return screen;
   }
 
@@ -332,19 +326,23 @@
   function storyScreen(sd) {
     var screen = el("div", "fmt-screen fmt-screen-story");
 
-    // серия сторис: каждый кадр отдельно с нумерацией
+    // серия сторис: бренд+иконка вверху, кадры — номер и текст
     if (sd.stories && sd.stories.length) {
-      var list = el("div", "story-list");
       var total = sd.stories.length;
+      var series = el("div", "story-series");
+
+      var brand = el("div", "story-series-head");
+      var ring = el("span", "story-ring");
+      ring.appendChild(el("span", "story-avatar", sd.icon || "✦"));
+      brand.appendChild(ring);
+      brand.appendChild(el("div", "story-series-user", sd.app || ""));
+      series.appendChild(brand);
+
+      var list = el("div", "story-list");
       sd.stories.forEach(function (s, i) {
         var frame = el("div", "story-frame");
         var num = el("div", "story-num", (i + 1) + " из " + total);
         frame.appendChild(num);
-        var ring = el("span", "story-ring");
-        ring.appendChild(el("span", "story-avatar", sd.icon || "✦"));
-        frame.appendChild(ring);
-        var user = el("div", "story-user", sd.app || "");
-        frame.appendChild(user);
         var text = el("div", "story-frame-text", s);
         frame.appendChild(text);
         if (i === total - 1 && sd.cta) {
@@ -353,7 +351,8 @@
         }
         list.appendChild(frame);
       });
-      screen.appendChild(list);
+      series.appendChild(list);
+      screen.appendChild(series);
       return screen;
     }
 
@@ -567,9 +566,9 @@
     return landingScreen(sd);
   }
 
-  // Кнопки на телефоне реагируют на тап: появляется попап, как ответ приложения
+  // Элементы на телефоне реагируют на тап: появляется попап, как ответ приложения
   function attachPhoneTaps(screen, sd) {
-    var tappable = screen.querySelectorAll("button, .msg-cta");
+    var tappable = screen.querySelectorAll("button, .msg-cta, .push-notif");
     Array.prototype.forEach.call(tappable, function (b) {
       b.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -633,7 +632,6 @@
     cards.appendChild(coverCard("Письмо", "off2"));
     cards.appendChild(coverCard("Баннер", "off3"));
     cover.appendChild(cards);
-    cover.appendChild(el("div", "cover-hint", "В заданиях можно нажимать на кнопки и смотреть, что происходит дальше."));
 
     var left = el("div", "intro-phone");
     left.appendChild(phoneFrame(cover, false));
@@ -641,14 +639,15 @@
 
     // Правая колонка: вводная
     var panel = el("div", "panel");
+    panel.appendChild(el("div", "intro-eyebrow", "Для продуктовых редакторов"));
     panel.appendChild(el("h1", "intro-heading", "Дарк-паттерны в тексте"));
     panel.appendChild(el("p", "intro-body",
-      "Одни тексты честно описывают продукт, другие давят на человека или обещают то, чего он не получит. Потренируйтесь замечать эти приемы и проверять предложения по условиям."));
+      "Иногда предложение выглядит убедительно, но скрывает важное условие или обещает больше, чем получит клиент. Потренируйтесь замечать такие приемы на примерах из разных продуктов."));
 
     var howBlock = el("div", "how-block");
     howBlock.appendChild(el("div", "intro-subhead", "Как устроен тренажер"));
     var howList = el("div", "how-list");
-    howList.appendChild(howRow("doc", "Смотрим на предложение", "В телефоне — текст для клиента, рядом — условия и вопрос задания. Сравните обещания с тем, что клиент получит на самом деле. В заданиях кнопки внутри телефона можно нажимать."));
+    howList.appendChild(howRow("doc", "Смотрим на предложение", "В телефоне — текст для клиента, рядом — условия и вопрос задания. Сравните обещания с тем, что клиент получит на самом деле."));
     howList.appendChild(howRow("pick", "Выбираем ответ", "В каждом задании один правильный ответ. В одних текстах есть дарк-паттерны, а в других все в порядке."));
     howList.appendChild(howRow("com", "Разбираем текст", "После ответа объясним, что в предложении стоит изменить и почему. Для корректных текстов покажем, как обещание соответствует условиям."));
     howBlock.appendChild(howList);
@@ -827,7 +826,7 @@
     // прогресс (номер кейса + полоса)
     panel.appendChild(buildProgress(state.index, CASES.length));
 
-    // результат — полноширинная плашка
+    // результат — компактная плашка
     var correct = chosen.isCorrect;
 
     function resultHead(title, isCorrect) {
@@ -837,24 +836,28 @@
       return head;
     }
 
-    var res = el("div", "result-plaque " + (correct ? "rp-correct" : "rp-wrong"));
-    res.appendChild(resultHead(correct ? "Верно" : "Не совсем", correct));
-    var resBody = el("div", "result-body");
-    resBody.appendChild(el("div", "result-body-text", chosen.text));
-    res.appendChild(resBody);
-    panel.appendChild(res);
-
-    // для неверного ответа — отдельная плашка «Правильный ответ»
-    if (!correct) {
-      var correctPlaque = el("div", "result-plaque rp-correct");
-      correctPlaque.appendChild(resultHead("Правильный ответ", true));
-      var correctBody = el("div", "result-body");
-      correctBody.appendChild(el("div", "result-body-text", correctOpt.text));
-      correctPlaque.appendChild(correctBody);
-      panel.appendChild(correctPlaque);
+    if (correct) {
+      // верный ответ — одна зелёная плашка
+      var res = el("div", "result-plaque rp-correct");
+      res.appendChild(resultHead("Верно", true));
+      var resBody = el("div", "result-body");
+      resBody.appendChild(el("div", "result-body-text", chosen.text));
+      res.appendChild(resBody);
+      panel.appendChild(res);
+    } else {
+      // неверный ответ — один компактный блок: статус + ваш ответ + правильный
+      var res = el("div", "result-plaque rp-wrong");
+      res.appendChild(resultHead("Не совсем", false));
+      var resBody = el("div", "result-body");
+      resBody.appendChild(el("div", "result-body-label", "Ваш ответ"));
+      resBody.appendChild(el("div", "result-body-text", chosen.text));
+      resBody.appendChild(el("div", "result-body-label", "Правильный ответ"));
+      resBody.appendChild(el("div", "result-body-text right", correctOpt.text));
+      res.appendChild(resBody);
+      panel.appendChild(res);
     }
 
-    // разбор — три плашки
+    // разбор — плашки
     panel.appendChild(buildBreakdown(c));
 
     // кнопка «Следующий кейс»
@@ -905,7 +908,7 @@
       pCard.appendChild(el("p", "bs-text", b.problem));
       block.appendChild(pCard);
 
-      // 2. Как исправить — рекомендация + исправленный пример в том же формате
+      // 2. Как исправить — рекомендация + исправленный пример текстом
       var fCard = el("div", "bs-card bs-green");
       fCard.appendChild(el("div", "bs-label", "Как исправить"));
       if (b.fix) fCard.appendChild(el("p", "bs-text", b.fix));
@@ -913,7 +916,19 @@
         var exLabel = el("div", "bs-example-label", "Исправленный пример");
         fCard.appendChild(exLabel);
         var exWrap = el("div", "bs-example");
-        exWrap.appendChild(buildFormatScreen(b.example.format, b.example));
+        var ex = b.example;
+        if (ex.header && ex.header.title) exWrap.appendChild(el("div", "ex-title", ex.header.title));
+        if (ex.stories && ex.stories.length) {
+          ex.stories.forEach(function (s, i) {
+            exWrap.appendChild(el("p", "bs-text", (ex.stories.length > 1 ? "Сторис " + (i + 1) + ": " : "") + s));
+          });
+        }
+        (ex.paragraphs || []).forEach(function (p) {
+          exWrap.appendChild(el("p", "bs-text", p));
+        });
+        if (ex.cta) {
+          exWrap.appendChild(el("div", "ex-cta", "Текст кнопки: " + ex.cta));
+        }
         fCard.appendChild(exWrap);
       }
       block.appendChild(fCard);
