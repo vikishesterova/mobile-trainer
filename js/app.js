@@ -269,20 +269,14 @@
   }
 
   function getCta(sd) {
-    var c = null;
-    sd.blocks.forEach(function (b) { if (b.t === "cta") c = b.text; });
-    return c;
+    return sd.cta || null;
   }
 
-  // короткая подпись формата (одна строка), без лишнего текста
+  // короткая подпись формата (первый абзац)
   function subText(sd) {
-    var s = null;
-    sd.blocks.forEach(function (b) {
-      if (s) return;
-      if (b.t === "offer" && b.text) s = b.text;
-      else if (b.t === "text") s = b.text;
-    });
-    return s;
+    if (sd.paragraphs && sd.paragraphs.length) return sd.paragraphs[0];
+    if (sd.stories && sd.stories.length) return sd.stories[sd.stories.length - 1];
+    return null;
   }
 
   function pushScreen(sd) {
@@ -293,7 +287,6 @@
     var head = el("div", "push-head");
     var iconWrap = el("div", "push-icon");
     iconWrap.appendChild(appIcon(sd.icon));
-    iconWrap.appendChild(el("span", "push-badge", "2"));
     head.appendChild(iconWrap);
     var col = el("div", "push-app-col");
     col.appendChild(el("div", "push-app", sd.app || ""));
@@ -304,6 +297,12 @@
     var sub = subText(sd);
     if (sub) notif.appendChild(el("div", "push-line", sub));
     screen.appendChild(notif);
+    if (sd.action) {
+      var action = el("div", "push-action");
+      action.appendChild(el("span", "push-action-label", "Действие при нажатии"));
+      action.appendChild(el("span", "push-action-text", sd.action));
+      screen.appendChild(action);
+    }
     return screen;
   }
 
@@ -319,8 +318,11 @@
     brand.appendChild(el("span", "banner-brand-name", sd.app || ""));
     card.appendChild(brand);
     card.appendChild(el("div", "banner-headline", sd.header.title));
-    var sub = subText(sd);
-    if (sub) card.appendChild(el("div", "banner-line", sub));
+    var body = el("div", "banner-body");
+    (sd.paragraphs || []).forEach(function (p) {
+      body.appendChild(el("div", "banner-line", p));
+    });
+    if (body.childNodes.length) card.appendChild(body);
     var cta = getCta(sd);
     if (cta) card.appendChild(el("button", "btn-banner", cta));
     screen.appendChild(card);
@@ -330,26 +332,26 @@
   function storyScreen(sd) {
     var screen = el("div", "fmt-screen fmt-screen-story");
 
-    // набор сторис (кейсы «три сторис») — стек карточек
+    // серия сторис: каждый кадр отдельно с нумерацией
     if (sd.stories && sd.stories.length) {
       var list = el("div", "story-list");
-      sd.stories.forEach(function (s) {
-        var card = el("div", "story-card");
-        var sHead = el("div", "story-card-head");
+      var total = sd.stories.length;
+      sd.stories.forEach(function (s, i) {
+        var frame = el("div", "story-frame");
+        var num = el("div", "story-num", (i + 1) + " из " + total);
+        frame.appendChild(num);
         var ring = el("span", "story-ring");
         ring.appendChild(el("span", "story-avatar", sd.icon || "✦"));
-        sHead.appendChild(ring);
-        var col = el("div", "story-id");
-        col.appendChild(el("div", "story-user", sd.app || ""));
-        col.appendChild(el("div", "story-time", "сейчас"));
-        sHead.appendChild(col);
-        sHead.appendChild(el("span", "story-more", "⋯"));
-        sHead.appendChild(el("span", "story-close", "×"));
-        card.appendChild(sHead);
-        var body = el("div", "story-card-body");
-        body.appendChild(el("div", "story-card-text", s));
-        card.appendChild(body);
-        list.appendChild(card);
+        frame.appendChild(ring);
+        var user = el("div", "story-user", sd.app || "");
+        frame.appendChild(user);
+        var text = el("div", "story-frame-text", s);
+        frame.appendChild(text);
+        if (i === total - 1 && sd.cta) {
+          var btn = el("button", "btn-story", sd.cta);
+          frame.appendChild(btn);
+        }
+        list.appendChild(frame);
       });
       screen.appendChild(list);
       return screen;
@@ -371,17 +373,16 @@
     head.appendChild(el("span", "story-close", "×"));
     screen.appendChild(head);
 
-    var offerTitle = null, offerText = null, bullets = null;
-    sd.blocks.forEach(function (b) {
+    var offerTitle = null, offerText = null;
+    (sd.blocks || []).forEach(function (b) {
       if (b.t === "offer" && b.title && !offerTitle) offerTitle = b.title;
       if (b.t === "offer" && b.text && !offerText) offerText = b.text;
-      if (b.t === "bullets" && !bullets) bullets = b.items;
     });
 
     var vis = el("div", "story-main");
     vis.appendChild(el("div", "story-emoji", sd.icon));
     vis.appendChild(el("div", "story-headline", offerTitle || sd.header.title));
-    var text = bullets ? bullets.join(" · ") : (offerText || subText(sd));
+    var text = offerText || (sd.paragraphs ? sd.paragraphs.join(" ") : null) || subText(sd);
     if (text) vis.appendChild(el("div", "story-text", text));
     screen.appendChild(vis);
 
@@ -407,8 +408,21 @@
     page.appendChild(hero);
 
     page.appendChild(el("h2", "landing-title", sd.header.title));
-    var sub = subText(sd);
-    if (sub) page.appendChild(el("div", "landing-subtitle", sub));
+
+    (sd.paragraphs || []).forEach(function (p) {
+      page.appendChild(el("div", "landing-p", p));
+    });
+
+    if (sd.cards && sd.cards.length) {
+      var cardsWrap = el("div", "landing-cards");
+      sd.cards.forEach(function (c) {
+        var cardEl = el("div", "tariff-card");
+        cardEl.appendChild(el("div", "tariff-title", c.title));
+        cardEl.appendChild(el("div", "tariff-text", c.text));
+        cardsWrap.appendChild(cardEl);
+      });
+      page.appendChild(cardsWrap);
+    }
 
     var cta = getCta(sd);
     screen.appendChild(page);
@@ -460,19 +474,26 @@
     return screen;
   }
 
-  // СООБЩЕНИЕ — SMS / email / чат
+  // ПИСЬМО — открытое письмо: отправитель, тема, текст с абзацами, кнопка
   function messageScreen(sd) {
     var screen = el("div", "fmt-screen fmt-screen-msg");
     var card = el("div", "msg-card");
-    var head = el("div", "msg-head");
-    head.appendChild(el("span", "msg-sender", sd.app || "Сервис"));
-    head.appendChild(el("span", "msg-time", "сейчас"));
-    card.appendChild(head);
+    var top = el("div", "msg-top");
+    top.appendChild(el("span", "msg-from-label", "От:"));
+    top.appendChild(el("span", "msg-sender", sd.app || "Сервис"));
+    card.appendChild(top);
     card.appendChild(el("div", "msg-subject", sd.header.title));
-    var sub = subText(sd);
-    if (sub) card.appendChild(el("div", "msg-line", sub));
+    var body = el("div", "msg-body");
+    (sd.paragraphs || []).forEach(function (p) {
+      body.appendChild(el("div", "msg-line", p));
+    });
+    if (body.childNodes.length) card.appendChild(body);
     var cta = getCta(sd);
-    if (cta) card.appendChild(el("div", "msg-cta", "→ " + cta));
+    if (cta) {
+      var ctaRow = el("div", "msg-cta-row");
+      ctaRow.appendChild(el("button", "btn-msg", cta));
+      card.appendChild(ctaRow);
+    }
     screen.appendChild(card);
     return screen;
   }
@@ -484,27 +505,13 @@
   // собираем текст формата из блоков кейса (всегда как текст, без UI-элементов)
   function collectText(sd) {
     var lines = [];
-    sd.blocks.forEach(function (b) {
-      if (b.t === "text") lines.push(b.text);
-      else if (b.t === "offer") {
-        if (b.title) lines.push(b.title + (b.text ? " — " + b.text : ""));
-        else if (b.text) lines.push(b.text);
-      }
-      else if (b.t === "badge") lines.push(b.text);
-      else if (b.t === "note") lines.push(b.text);
-      else if (b.t === "price") lines.push(b.old ? b.old + " → " + b.current : b.current);
-      else if (b.t === "compare") {
-        b.rows.forEach(function (r) { lines.push(r.label + ": " + r.value); });
-      }
-      else if (b.t === "bullets") {
-        b.items.forEach(function (it) { lines.push("• " + it); });
-      }
-      else if (b.t === "card") {
-        var s = (b.label ? b.label + " — " : "") + (b.balance || "");
-        if (b.sub) s += " (" + b.sub + ")";
-        lines.push(s);
-      }
-    });
+    (sd.paragraphs || []).forEach(function (p) { lines.push(p); });
+    if (sd.cards) {
+      sd.cards.forEach(function (c) { lines.push(c.title + " — " + c.text); });
+    }
+    if (sd.stories) {
+      sd.stories.forEach(function (s, i) { lines.push("Сторис " + (i + 1) + ": " + s); });
+    }
     return lines;
   }
 
@@ -520,9 +527,7 @@
 
     var body = el("div", "sheet-body");
 
-    var headline = null;
-    sd.blocks.forEach(function (b) { if (b.t === "offer" && b.title) headline = b.title; });
-    body.appendChild(el("div", "sheet-headline", headline || sd.header.title));
+    body.appendChild(el("div", "sheet-headline", sd.header.title));
 
     if (sd.header.subtitle) body.appendChild(el("div", "sheet-sub", sd.header.subtitle));
 
@@ -533,8 +538,7 @@
       body.appendChild(txt);
     }
 
-    var cta = null;
-    sd.blocks.forEach(function (b) { if (b.t === "cta") cta = b.text; });
+    var cta = sd.cta || null;
     if (cta) {
       var ctaRow = el("div", "sheet-cta");
       ctaRow.appendChild(el("span", "sheet-cta-label", "Кнопка"));
@@ -637,21 +641,20 @@
 
     // Правая колонка: вводная
     var panel = el("div", "panel");
-    panel.appendChild(el("div", "intro-eyebrow", "Для продуктовых редакторов"));
     panel.appendChild(el("h1", "intro-heading", "Дарк-паттерны в тексте"));
     panel.appendChild(el("p", "intro-body",
-      "Иногда предложение выглядит убедительно, но скрывает важное условие или обещает больше, чем получит клиент. Потренируйтесь замечать такие приемы на примерах из разных продуктов."));
+      "Одни тексты честно описывают продукт, другие давят на человека или обещают то, чего он не получит. Потренируйтесь замечать эти приемы и проверять предложения по условиям."));
 
     var howBlock = el("div", "how-block");
     howBlock.appendChild(el("div", "intro-subhead", "Как устроен тренажер"));
     var howList = el("div", "how-list");
-    howList.appendChild(howRow("doc", "Смотрим на предложение", "В телефоне — текст для клиента, рядом — условия и вопрос задания. Сравните обещания с тем, что клиент получит на самом деле."));
-    howList.appendChild(howRow("pick", "Выбираем ответ", "В каждом задании один правильный ответ. В некоторых кейсах все в порядке. Так тренируем насмотренность и учимся видеть границу между убеждением и манипуляцией."));
-    howList.appendChild(howRow("com", "Разбираем текст", "После ответа покажем, какие слова могут сбить клиента с толку и как их изменить. Для текстов без дарк-паттернов объясним, почему все в порядке."));
+    howList.appendChild(howRow("doc", "Смотрим на предложение", "В телефоне — текст для клиента, рядом — условия и вопрос задания. Сравните обещания с тем, что клиент получит на самом деле. В заданиях кнопки внутри телефона можно нажимать."));
+    howList.appendChild(howRow("pick", "Выбираем ответ", "В каждом задании один правильный ответ. В одних текстах есть дарк-паттерны, а в других все в порядке."));
+    howList.appendChild(howRow("com", "Разбираем текст", "После ответа объясним, что в предложении стоит изменить и почему. Для корректных текстов покажем, как обещание соответствует условиям."));
     howBlock.appendChild(howList);
     panel.appendChild(howBlock);
 
-    panel.appendChild(el("div", "intro-note", "В тренажере — вымышленные или обезличенные ситуации. Тексты и экраны подготовлены для тренировки."));
+    panel.appendChild(el("div", "intro-note", "Все продукты и ситуации в заданиях учебные."));
 
     var actions = el("div", "panel-actions");
     var goBtn = el("button", "btn btn-primary", "Начать");
@@ -881,7 +884,11 @@
 
   function buildBreakdown(c) {
     var wrap = el("div", "breakdown-wrap");
-    wrap.appendChild(el("div", "breakdown-title", "Разбираем текст"));
+    var titleRow = el("div", "breakdown-head");
+    titleRow.appendChild(el("div", "breakdown-title", "Разбираем текст"));
+    if (c.type) titleRow.appendChild(el("span", "breakdown-type", c.type));
+    wrap.appendChild(titleRow);
+
     var block = el("div", "breakdown-block");
     var b = c.breakdown;
 
@@ -898,27 +905,22 @@
       pCard.appendChild(el("p", "bs-text", b.problem));
       block.appendChild(pCard);
 
-      // 2. Как исправить — рекомендация, затем пример через разделитель
-      var fx = splitFix(b.fix);
+      // 2. Как исправить — рекомендация + исправленный пример в том же формате
       var fCard = el("div", "bs-card bs-green");
       fCard.appendChild(el("div", "bs-label", "Как исправить"));
-      if (fx.rec) fCard.appendChild(el("p", "bs-text", fx.rec));
-      if (fx.ex) fCard.appendChild(el("div", "bs-example", fx.ex));
+      if (b.fix) fCard.appendChild(el("p", "bs-text", b.fix));
+      if (b.example) {
+        var exLabel = el("div", "bs-example-label", "Исправленный пример");
+        fCard.appendChild(exLabel);
+        var exWrap = el("div", "bs-example");
+        exWrap.appendChild(buildFormatScreen(b.example.format, b.example));
+        fCard.appendChild(exWrap);
+      }
       block.appendChild(fCard);
     }
 
     wrap.appendChild(block);
     return wrap;
-  }
-
-  // отделяем рекомендацию от примера в тексте fix (пример — в «...»)
-  function splitFix(text) {
-    if (!text) return { rec: "", ex: null };
-    var idx = text.indexOf("«");
-    if (idx === -1) return { rec: text.trim(), ex: null };
-    var rec = text.slice(0, idx).replace(/[:\s]+$/, "").replace(/Например\s*$/, "").trim();
-    var ex = text.slice(idx).trim();
-    return { rec: rec, ex: ex };
   }
 
   // ============================================================================
@@ -958,28 +960,49 @@
     // кейсы с неверными ответами
     var wrong = state.answers.filter(function (a) { return !a.correct; });
     if (wrong.length > 0) {
+      var listWrap = el("div", "mistakes-section");
+      listWrap.appendChild(el("h2", "mistakes-title", "Задания для повторения"));
+      listWrap.appendChild(el("p", "mistakes-lead", "Ниже — задания, в которых вы ошиблись. Откройте их, чтобы еще раз сравнить предложение с условиями и посмотреть разбор."));
       var list = el("div", "mistakes-list");
       wrong.forEach(function (a) {
         var item = CASES.filter(function (c) { return c.id === a.caseId; })[0];
-        list.appendChild(mistakeRow(item));
+        list.appendChild(mistakeRow(item, a));
       });
-      panel.appendChild(list);
+      listWrap.appendChild(list);
+      panel.appendChild(listWrap);
     }
 
     wrap.appendChild(panel);
     render(wrap);
   }
 
-  function mistakeRow(item) {
+  function mistakeRow(item, answer) {
     var row = el("div", "mistake-row");
     var head = el("button", "mistake-head");
     head.appendChild(el("span", "mistake-dot"));
     head.appendChild(el("span", "mistake-name", item.title));
+    head.appendChild(el("span", "mistake-type", item.type || ""));
     head.appendChild(el("span", "mistake-caret", "▾"));
     row.appendChild(head);
+
     var body = el("div", "mistake-body");
-    body.appendChild(el("div", "mistake-fix", breakdownTakeaway(item.breakdown)));
     body.style.display = "none";
+
+    var chosenOpt = item.options[answer.selectedIndex];
+    var correctOpt = null;
+    item.options.forEach(function (o) { if (o.isCorrect) correctOpt = o; });
+
+    body.appendChild(el("div", "mistake-field", "Предложение"));
+    body.appendChild(el("div", "mistake-value", textOfCase(item)));
+    body.appendChild(el("div", "mistake-field", "Вопрос"));
+    body.appendChild(el("div", "mistake-value", item.question));
+    body.appendChild(el("div", "mistake-field", "Ваш ответ"));
+    body.appendChild(el("div", "mistake-value wrong", (chosenOpt ? chosenOpt.text : "") + " (" + (answer.selectedIndex + 1) + ")"));
+    body.appendChild(el("div", "mistake-field", "Правильный ответ"));
+    body.appendChild(el("div", "mistake-value right", (correctOpt ? correctOpt.text : "")));
+    body.appendChild(el("div", "mistake-divider"));
+    body.appendChild(buildBreakdown(item));
+
     row.appendChild(body);
     head.addEventListener("click", function () {
       var open = body.style.display !== "none";
@@ -989,18 +1012,24 @@
     return row;
   }
 
+  // собираем текст предложения из экрана кейса
+  function textOfCase(item) {
+    var sd = item.screen;
+    var lines = [];
+    if (sd.header && sd.header.title) lines.push(sd.header.title);
+    (sd.paragraphs || []).forEach(function (p) { lines.push(p); });
+    if (sd.cards) sd.cards.forEach(function (c) { lines.push(c.title + " — " + c.text); });
+    if (sd.stories) sd.stories.forEach(function (s) { lines.push(s); });
+    return lines.join(" ");
+  }
+
   function resultsTitle(pct) {
-    if (pct >= 80) return "Отличная насмотренность";
-    if (pct >= 60) return "Хороший результат";
-    if (pct >= 40) return "Неплохо, но есть над чем поработать";
-    return "Начало положено";
+    return "Вы прошли тренажер";
   }
 
   function resultsLead(pct) {
-    if (pct >= 80) return "Вы хорошо различаете, как формулировки формируют ожидания клиента.";
-    if (pct >= 60) return "Большинство паттернов вы замечаете. Разборы в конце кейсов помогут закрепить.";
-    if (pct >= 40) return "Часть приемов еще «проскакивает». Вернитесь к разборам, там логика каждого случая.";
-    return "Это нормально для первого раза: дарк-паттерны потому и неочевидны. Разборы покажут, на что смотреть.";
+    if (pct >= 100) return "Все ответы верные. Вы разобрали корректные предложения, манипуляции и дарк-паттерны.";
+    return "Вы прошли тренажер. Ниже — задания, в которых вы ошиблись. Откройте их, чтобы еще раз сравнить предложение с условиями и посмотреть разбор.";
   }
 
   // ============================================================================
@@ -1015,23 +1044,27 @@
     back.addEventListener("click", renderResults);
     panel.appendChild(back);
 
-    panel.appendChild(el("h1", "results-title", "Обратная связь"));
-    panel.appendChild(el("p", "results-lead", "Пара коротких вопросов, и все."));
+    panel.appendChild(el("h1", "results-title", "Как вам тренажер?"));
+    panel.appendChild(el("p", "results-lead", "Оцените пользу тренажера. Если хотите, оставьте комментарий."));
 
     var q1 = el("div", "survey-q");
     q1.appendChild(el("div", "survey-q-text", "Насколько полезен был тренажер?"));
+    var scale = el("div", "survey-scale");
+    scale.appendChild(el("span", "survey-scale-label", "1 — совсем не полезен"));
+    scale.appendChild(el("span", "survey-scale-label", "5 — очень полезен"));
+    q1.appendChild(scale);
     q1.appendChild(ratingButtons("rating"));
     panel.appendChild(q1);
 
     var q2 = el("div", "survey-q");
-    q2.appendChild(el("div", "survey-q-text", "Комментарий (необязательно)"));
+    q2.appendChild(el("div", "survey-q-text", "Комментарий — необязательно"));
     var ta = el("textarea", "survey-textarea");
     ta.rows = 4;
-    ta.placeholder = "Что понравилось или что улучшить?";
+    ta.placeholder = "Что было полезно и что стоит улучшить?";
     q2.appendChild(ta);
     panel.appendChild(q2);
 
-    var submit = el("button", "btn btn-primary", "Отправить и завершить");
+    var submit = el("button", "btn btn-primary", "Отправить оценку");
     submit.disabled = true;
     submit.id = "survey-submit";
     submit.addEventListener("click", function () {
@@ -1073,7 +1106,7 @@
     var wrap = el("div", "screen");
     var panel = el("div", "results-panel");
 
-    panel.appendChild(el("h1", "results-title", "Готово!"));
+    panel.appendChild(el("h1", "results-title", "Спасибо за обратную связь!"));
     panel.appendChild(el("p", "results-lead", "Спасибо, что прошли тренажер. Возвращайтесь к разборам, когда захотите прокачать насмотренность на дарк-паттерны."));
 
     var actions = el("div", "results-actions");
