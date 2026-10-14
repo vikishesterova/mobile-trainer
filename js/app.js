@@ -830,32 +830,32 @@
     // результат — компактная плашка
     var correct = chosen.isCorrect;
 
-    function resultHead(title, isCorrect) {
-      var head = el("div", "result-head");
-      if (isCorrect) head.appendChild(el("span", "result-ico", "✓"));
-      head.appendChild(el("div", "result-title", title));
-      return head;
+    function answerPlaque(label, text, kind) {
+      var p = el("div", "answer-plaque " + (kind === "wrong" ? "ap-wrong" : "ap-right"));
+      p.appendChild(el("div", "answer-plaque-label", label));
+      p.appendChild(el("div", "answer-plaque-text", text));
+      return p;
     }
 
     if (correct) {
-      // верный ответ — одна зелёная плашка
+      // верный ответ — одна зелёная плашка (как раньше)
       var res = el("div", "result-plaque rp-correct");
-      res.appendChild(resultHead("Верно", true));
+      var rHead = el("div", "result-head");
+      rHead.appendChild(el("span", "result-ico", "✓"));
+      rHead.appendChild(el("div", "result-title", "Верно"));
+      res.appendChild(rHead);
       var resBody = el("div", "result-body");
       resBody.appendChild(el("div", "result-body-text", chosen.text));
       res.appendChild(resBody);
       panel.appendChild(res);
     } else {
-      // неверный ответ — один компактный блок: статус + ваш ответ + правильный
-      var res = el("div", "result-plaque rp-wrong");
-      res.appendChild(resultHead("Не совсем", false));
-      var resBody = el("div", "result-body");
-      resBody.appendChild(el("div", "result-body-label", "Ваш ответ"));
-      resBody.appendChild(el("div", "result-body-text", chosen.text));
-      resBody.appendChild(el("div", "result-body-label", "Правильный ответ"));
-      resBody.appendChild(el("div", "result-body-text right", correctOpt.text));
-      res.appendChild(resBody);
-      panel.appendChild(res);
+      // неверный ответ — короткий статус + две отдельные плашки
+      panel.appendChild(el("div", "result-status", "Не совсем"));
+
+      var answersWrap = el("div", "answers-block");
+      answersWrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
+      answersWrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
+      panel.appendChild(answersWrap);
     }
 
     // разбор — плашки
@@ -909,33 +909,49 @@
       pCard.appendChild(el("p", "bs-text", b.problem));
       block.appendChild(pCard);
 
-      // 2. Как исправить — рекомендация + исправленный пример текстом
+      // 2. Как исправить — рекомендация + исправленный пример в стиле формата
       var fCard = el("div", "bs-card bs-green");
       fCard.appendChild(el("div", "bs-label", "Как исправить"));
       if (b.fix) fCard.appendChild(el("p", "bs-text", b.fix));
       if (b.example) {
         var exLabel = el("div", "bs-example-label", "Исправленный пример");
         fCard.appendChild(exLabel);
-        var exWrap = el("div", "bs-example");
-        var ex = b.example;
-        if (ex.header && ex.header.title) exWrap.appendChild(el("div", "ex-title", ex.header.title));
-        if (ex.stories && ex.stories.length) {
-          ex.stories.forEach(function (s, i) {
-            exWrap.appendChild(el("p", "bs-text", (ex.stories.length > 1 ? "Сторис " + (i + 1) + ": " : "") + s));
-          });
-        }
-        (ex.paragraphs || []).forEach(function (p) {
-          exWrap.appendChild(el("p", "bs-text", p));
-        });
-        if (ex.cta) {
-          exWrap.appendChild(el("div", "ex-cta", "Текст кнопки: " + ex.cta));
-        }
-        fCard.appendChild(exWrap);
+        fCard.appendChild(buildExamplePreview(b.example));
       }
       block.appendChild(fCard);
     }
 
     wrap.appendChild(block);
+    return wrap;
+  }
+
+  // исправленный пример: визуальное оформление исходного формата, без кнопки
+  function buildExamplePreview(ex) {
+    var wrap = el("div", "ex-preview ex-preview-" + (ex.format || "landing"));
+    if (ex.stories && ex.stories.length) {
+      var total = ex.stories.length;
+      ex.stories.forEach(function (s, i) {
+        var frame = el("div", "ex-story");
+        if (total > 1) frame.appendChild(el("div", "ex-story-num", "Сторис " + (i + 1) + " из " + total));
+        frame.appendChild(el("div", "ex-story-text", s));
+        wrap.appendChild(frame);
+      });
+    } else {
+      if (ex.header && ex.header.title) wrap.appendChild(el("div", "ex-title", ex.header.title));
+      (ex.paragraphs || []).forEach(function (p) {
+        wrap.appendChild(el("p", "ex-p", p));
+      });
+      if (ex.cards) {
+        var cards = el("div", "ex-cards");
+        ex.cards.forEach(function (c) {
+          var cardEl = el("div", "ex-card");
+          cardEl.appendChild(el("div", "ex-card-title", c.title));
+          cardEl.appendChild(el("div", "ex-card-text", c.text));
+          cards.appendChild(cardEl);
+        });
+        wrap.appendChild(cards);
+      }
+    }
     return wrap;
   }
 
