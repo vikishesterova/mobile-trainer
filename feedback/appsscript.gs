@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // Что делает:
 //   doPost(e)  — тренажер шлет сюда оценку и комментарий, скрипт пишет их
-//                в новую строку активного листа таблицы.
+//                в новую строку указанного листа таблицы.
 //   doGet(e)   — дашборд запрашивает данные, скрипт возвращает их как JSON.
 //
 // Настройка (один раз, ~5 минут):
@@ -22,13 +22,16 @@
 //   5. Переразверните и запушьте тренажер.
 // ============================================================================
 
-// Имя листа, куда пишем (по умолчанию первый лист).
-var SHEET_NAME = null; // null = активный (первый) лист
+// Таблица «Дашборд» и лист для обратной связи.
+// В веб-приложении нет активной таблицы: открываем нужную по ID.
+var SPREADSHEET_ID = "12wAwFcVV-cnlckqalkAuoqnhcX5pga6RLVDp39lLsTg";
+var SHEET_NAME = "Лист1";
 
 function getSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (SHEET_NAME) return ss.getSheetByName(SHEET_NAME);
-  return ss.getSheets()[0];
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+  if (!sheet) throw new Error("Лист для обратной связи не найден: " + SHEET_NAME);
+  return sheet;
 }
 
 // Приём ответа от тренажера (POST). Тело запроса — JSON.
