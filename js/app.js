@@ -1242,8 +1242,8 @@
     }, 6000);
   }
 
-  // Не читаем ответ POST через перенаправление ContentService. Подтверждение —
-  // конкретная строка с теми же датой, оценкой и комментарием в GET-ответе.
+  // Тело ответа POST не служит подтверждением. Подтверждение — конкретная
+  // строка с теми же датой, оценкой и комментарием в GET-ответе.
   function sendSurveyToSheet(survey, onVerify) {
     if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
     var payload = survey.delivery;
@@ -1268,7 +1268,7 @@
       saveSurveyDraft(survey);
       return surveyRequest(function (signal) {
         return fetch(SURVEY_ENDPOINT, {
-          method: "POST", mode: "no-cors", redirect: "manual", credentials: "omit", signal: signal,
+          method: "POST", mode: "cors", redirect: "follow", credentials: "omit", signal: signal,
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment })
         });
