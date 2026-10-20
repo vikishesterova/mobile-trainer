@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Проверка связи с Google</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px 18px; background: #f5f2fa; color: #292633; font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 720px; margin: auto; }
+    h1 { font-size: 28px; line-height: 1.2; }
+    h2 { font-size: 18px; margin: 0 0 8px; }
+    p { margin: 8px 0; }
+    .muted { color: #686273; }
+    article, .report { padding: 22px; margin-top: 16px; border: 1px solid #ded6e9; border-radius: 16px; background: white; }
+    article[data-result="ok"] { border-left: 5px solid #397a52; }
+    article[data-result="error"] { border-left: 5px solid #b33236; }
+    .status { font-weight: 650; }
+    .detail { font-size: 14px; color: #686273; }
+    button { padding: 12px 18px; border: 0; border-radius: 12px; background: #7151ad; color: white; font: inherit; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    textarea { width: 100%; min-height: 175px; margin: 14px 0; padding: 14px; border: 1px solid #ded6e9; border-radius: 10px; color: #292633; background: #faf9fc; font: 14px/1.5 ui-monospace, monospace; }
+    a { color: #62409e; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Проверка связи с Google</h1>
+    <p class="muted">Проверяем чтение данных и доступность приема запросов. Новые отзывы не создаются. Дождитесь результатов — до 45 секунд.</p>
+    <article id="read" aria-live="polite">
+      <h2>Получение данных</h2>
+      <p class="status">Проверяем…</p><p class="detail"></p>
+    </article>
+    <article id="post" aria-live="polite">
+      <h2>Доступность приема запросов</h2>
+      <p class="status">Проверяем…</p><p class="detail"></p>
+    </article>
+    <section class="report">
+      <p id="summary">Проверка выполняется.</p>
+      <textarea id="report" aria-label="Результат проверки" readonly></textarea>
+      <button id="copy" disabled>Скопировать результат</button>
+      <p class="muted">Можно прислать скрин этой страницы или скопированный результат.</p>
+      <p><a id="direct" target="_blank" rel="noreferrer">Открыть сервис Google напрямую</a></p>
+    </section>
+  </main>
+  <script>
+    var endpoint = "https://script.google.com/macros/s/AKfycby8k4_UduJDaFDiRZMVXlPdGBpeUPEgex8bbo2uqVyVLb-aV3LpsmOQLHJ68lIRT-er/exec";
+    document.getElementById("direct").href = endpoint;
+    var results = {};
+    function seconds(ms) { return (ms / 1000).toFixed(1); }
+    function report() {
+      var lines = ["Проверка связи v1", "Сеть браузера: " + (navigator.onLine ? "подключена" : "отключена")];
+      ["read", "post"].forEach(function (key) {
+        var r = results[key];
+        if (r) lines.push(r.label + ": " + r.status + "; " + seconds(r.elapsed) + " с; " + r.detail);
+      });
+      document.getElementById("report").value = lines.join("\n");
+      if (results.read && results.post) {
+        document.getElementById("copy").disabled = false;
+        document.getElementById("summary").textContent = "Проверка завершена. Пришлите оба результата.";
+      }
+    }
+    function check(key, label, options, validate) {
+      var card = document.getElementById(key), started = Date.now(), done = false;
+      var controller = typeof AbortController === "function" ? new AbortController() : null;
+      var stage = "Заголовки ответа не получены";
+      function finish(ok, detail) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        var elapsed = Date.now() - started;
+        card.dataset.result = ok ? "ok" : "error";
+        card.querySelector(".status").textContent = ok ? "Ответ получен за " + seconds(elapsed) + " с" : "Проверка не прошла за " + seconds(elapsed) + " с";
+        card.querySelector(".detail").textContent = detail;
+        results[key] = { label: label, status: ok ? "OK" : "ОШИБКА", elapsed: elapsed, detail: detail };
+        report();
+      }
+      var timer = setTimeout(function () {
+        finish(false, "Тайм-аут 45 с. " + stage);
+        if (controller) { try { controller.abort(); } catch (ignored) {} }
+      }, 45000);
+      options.credentials = "omit";
+      options.mode = "cors";
+      options.redirect = "follow";
+      if (controller) options.signal = controller.signal;
+      Promise.resolve().then(function () {
+        return fetch(endpoint + "?connection_check=" + Date.now(), options);
+      }).then(function (response) {
+        stage = "HTTP " + response.status + " получен за " + seconds(Date.now() - started) + " с";
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.text();
+      }).then(function (text) {
+        finish(true, validate(text) + ". " + stage);
+      }).catch(function (err) {
+        finish(false, err.name + ": " + err.message + ". " + stage);
+      });
+    }
+    report();
+    check("read", "Чтение", { method: "GET", cache: "no-store" }, function (text) {
+      var rows = JSON.parse(text);
+      if (!Array.isArray(rows)) throw new Error("Получен ответ без списка отзывов");
+      return "Google вернул список отзывов";
+    });
+    // Заведомо невалидный JSON: doPost завершится в JSON.parse до appendRow.
+    check("post", "Прием запроса", {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: '{"diagnostic":'
+    }, function (text) {
+      if (!/^error:/i.test(text.trim())) throw new Error("Получен неожиданный ответ сервиса");
+      return "Google обработал проверочный запрос без создания отзыва";
+    });
+    document.getElementById("copy").addEventListener("click", function () {
+      var field = document.getElementById("report");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(field.value).then(function () {
+          document.getElementById("copy").textContent = "Скопировано";
+        }, function () { field.focus(); field.select(); });
+      } else { field.focus(); field.select(); }
+    });
+  </script>
+</body>
+</html>
