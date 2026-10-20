@@ -46,7 +46,7 @@ const DEFAULT_QUESTION = "Какое ожидание сформируется �
 // Приёмник обратной связи: URL Google Apps Script (Web App).
 // Подставьте реальный URL после настройки таблицы. Пустая строка
 // отключает отправку в таблицу (тогда ответы не сохраняются).
-const SURVEY_ENDPOINT = "";
+const SURVEY_ENDPOINT = "https://script.google.com/macros/s/AKfycby8k4_UduJDaFDiRZMVXlPdGBpeUPEgex8bbo2uqVyVLb-aV3LpsmOQLHJ68lIRT-er/exec";
 
 const CASES = [
   // --------------------------------------------------------------------------
