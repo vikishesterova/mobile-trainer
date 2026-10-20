@@ -1120,7 +1120,7 @@
       ta.disabled = true;
       var ratings = q1.querySelectorAll(".rating-btn");
       ratings.forEach(function (button) { button.disabled = true; });
-      sendSurveyToSheet(state.survey, function () { submit.textContent = "Проверяем запись…"; })
+      sendSurveyToSheet(state.survey)
         .then(function () {
           track("survey_submit", { rating: state.survey.rating, hasComment: !!state.survey.comment.trim() });
           clearSurveyDraft();
@@ -1205,7 +1205,7 @@
         if (finished) return;
         finished = true;
         var err = new Error("Feedback request timed out");
-        err.userMessage = "Google не ответил вовремя. Проверьте подключение и попробуйте еще раз.";
+        err.userMessage = "Сервис отзывов не ответил вовремя. Попробуйте еще раз.";
         reject(err);
         if (controller) { try { controller.abort(); } catch (ignored) {} }
       }, timeout);
@@ -1225,63 +1225,30 @@
     });
   }
 
-  function surveyRecorded(payload) {
-    return surveyRequest(function (signal) {
-      var url = SURVEY_ENDPOINT + (SURVEY_ENDPOINT.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
-      return fetch(url, { method: "GET", mode: "cors", credentials: "omit", cache: "no-store", signal: signal })
-        .then(function (response) {
-          if (!response.ok) throw new Error("HTTP " + response.status);
-          return response.json();
-        }).then(function (rows) {
-          if (!Array.isArray(rows)) throw new Error("Invalid feedback response");
-          return rows.some(function (row) {
-            return row && new Date(row.date).getTime() === new Date(payload.date).getTime() &&
-              Number(row.rating) === payload.rating && String(row.comment || "") === payload.comment;
-          });
-        });
-    }, 6000);
-  }
-
-  // Тело ответа POST не служит подтверждением. Подтверждение — конкретная
-  // строка с теми же датой, оценкой и комментарием в GET-ответе.
-  function sendSurveyToSheet(survey, onVerify) {
+  // Сервер возвращает ok только после проверки строки в Google Таблице.
+  // Дата сохраняется при повторе, чтобы сервер мог найти уже записанный отзыв.
+  function sendSurveyToSheet(survey) {
     if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
     var payload = survey.delivery;
     if (!payload || payload.rating !== survey.rating || payload.comment !== (survey.comment || "") || !isFinite(new Date(payload.date).getTime())) {
       payload = { date: new Date().toISOString(), rating: survey.rating, comment: survey.comment || "" };
       survey.delivery = payload;
     }
-    var alreadyAttempted = !!payload.attempted;
-
-    function verify() {
-      if (onVerify) onVerify();
-      return surveyRecorded(payload).then(function (recorded) {
-        if (recorded) return;
-        return surveyRecorded(payload).then(function (recordedAgain) {
-          if (!recordedAgain) throw new Error("Feedback row not found");
+    saveSurveyDraft(survey);
+    return surveyRequest(function (signal) {
+      return fetch(SURVEY_ENDPOINT, {
+        method: "POST", mode: "cors", redirect: "follow", credentials: "omit", signal: signal,
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment })
+      }).then(function (response) {
+        return response.text().then(function (text) {
+          if (response.ok && text.trim() === "ok") return;
+          var err = new Error("Feedback was not confirmed");
+          try { var data = JSON.parse(text); if (data && typeof data.error === "string") err.userMessage = data.error; } catch (ignored) {}
+          throw err;
         });
       });
-    }
-
-    function post() {
-      payload.attempted = true;
-      saveSurveyDraft(survey);
-      return surveyRequest(function (signal) {
-        return fetch(SURVEY_ENDPOINT, {
-          method: "POST", mode: "cors", redirect: "follow", credentials: "omit", signal: signal,
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment })
-        });
-      }, 8000).then(verify, verify);
-    }
-
-    // При повторе сначала ищем прежнюю запись: потерянное подтверждение
-    // не должно приводить к повторной отправке того же отзыва.
-    if (alreadyAttempted) return surveyRecorded(payload).then(function (recorded) {
-      if (recorded) return;
-      return post();
-    });
-    return post();
+    }, 45000);
   }
 
   // ============================================================================

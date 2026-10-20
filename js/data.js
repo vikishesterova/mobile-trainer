@@ -43,10 +43,9 @@ const TRENER_INTRO =
 
 const DEFAULT_QUESTION = "Какое ожидание сформируется у клиента?";
 
-// Приёмник обратной связи: URL Google Apps Script (Web App).
-// Подставьте реальный URL после настройки таблицы. Пустая строка
-// отключает отправку в таблицу (тогда ответы не сохраняются).
-const SURVEY_ENDPOINT = "https://script.google.com/macros/s/AKfycby8k4_UduJDaFDiRZMVXlPdGBpeUPEgex8bbo2uqVyVLb-aV3LpsmOQLHJ68lIRT-er/exec";
+// Сервер проверяет сохранение отзыва в Google Таблице.
+// Браузер обращается к этому адресу без прямого запроса к Google.
+const SURVEY_ENDPOINT = "https://mobile-trainer-feedback-relay.michellegreenrlg81.chatgpt.site/api/feedback";
 
 const CASES = [
   // --------------------------------------------------------------------------

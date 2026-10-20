@@ -79,9 +79,8 @@
   </div>
 
   <script>
-    // URL Google Apps Script (Web App) — тот же, что в тренажере.
-    // Подставьте реальный URL после настройки таблицы.
-    var DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8k4_UduJDaFDiRZMVXlPdGBpeUPEgex8bbo2uqVyVLb-aV3LpsmOQLHJ68lIRT-er/exec";
+    // Серверный адрес — тот же, что в тренажере.
+    var DATA_ENDPOINT = "https://mobile-trainer-feedback-relay.michellegreenrlg81.chatgpt.site/api/feedback";
     var loading = false;
 
     function esc(s) {
@@ -105,7 +104,7 @@
       var refresh = document.getElementById("refresh");
 
       if (!DATA_ENDPOINT) {
-        status.innerHTML = '<div class="error">Дашборд ещё не подключен: вставьте URL Apps Script в DATA_ENDPOINT.</div>';
+        status.innerHTML = '<div class="error">Дашборд ещё не подключен: настройте DATA_ENDPOINT.</div>';
         list.innerHTML = "";
         stats.innerHTML = "";
         return;
@@ -115,7 +114,7 @@
       refresh.disabled = true;
       refresh.textContent = "Обновляем…";
       var controller = new AbortController();
-      var timer = setTimeout(function () { controller.abort(); }, 20000);
+      var timer = setTimeout(function () { controller.abort(); }, 45000);
       if (!list.innerHTML) status.innerHTML = '<div class="loading">Загружаем ответы…</div>';
       var url = DATA_ENDPOINT + (DATA_ENDPOINT.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now();
       Promise.resolve().then(function () {

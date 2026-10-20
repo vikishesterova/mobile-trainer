@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Проверка связи с Google</title>
+  <title>Проверка сервиса отзывов</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; padding: 28px 18px; background: #f5f2fa; color: #292633; font: 16px/1.5 system-ui, sans-serif; }
@@ -26,7 +26,7 @@
 </head>
 <body>
   <main>
-    <h1>Проверка связи с Google</h1>
+    <h1>Проверка сервиса отзывов</h1>
     <p class="muted">Проверяем чтение данных и доступность приема запросов. Новые отзывы не создаются. Дождитесь результатов — до 45 секунд.</p>
     <article id="read" aria-live="polite">
       <h2>Получение данных</h2>
@@ -41,16 +41,16 @@
       <textarea id="report" aria-label="Результат проверки" readonly></textarea>
       <button id="copy" disabled>Скопировать результат</button>
       <p class="muted">Можно прислать скрин этой страницы или скопированный результат.</p>
-      <p><a id="direct" target="_blank" rel="noreferrer">Открыть сервис Google напрямую</a></p>
+      <p><a id="direct" target="_blank" rel="noreferrer">Открыть сервис отзывов</a></p>
     </section>
   </main>
   <script>
-    var endpoint = "https://script.google.com/macros/s/AKfycby8k4_UduJDaFDiRZMVXlPdGBpeUPEgex8bbo2uqVyVLb-aV3LpsmOQLHJ68lIRT-er/exec";
+    var endpoint = "https://mobile-trainer-feedback-relay.michellegreenrlg81.chatgpt.site/api/feedback";
     document.getElementById("direct").href = endpoint;
     var results = {};
     function seconds(ms) { return (ms / 1000).toFixed(1); }
     function report() {
-      var lines = ["Проверка связи v1", "Сеть браузера: " + (navigator.onLine ? "подключена" : "отключена")];
+      var lines = ["Проверка связи v2 — серверный прием", "Сеть браузера: " + (navigator.onLine ? "подключена" : "отключена")];
       ["read", "post"].forEach(function (key) {
         var r = results[key];
         if (r) lines.push(r.label + ": " + r.status + "; " + seconds(r.elapsed) + " с; " + r.detail);
@@ -61,7 +61,7 @@
         document.getElementById("summary").textContent = "Проверка завершена. Пришлите оба результата.";
       }
     }
-    function check(key, label, options, validate) {
+    function check(key, label, options, validate, expectedStatus) {
       var card = document.getElementById(key), started = Date.now(), done = false;
       var controller = typeof AbortController === "function" ? new AbortController() : null;
       var stage = "Заголовки ответа не получены";
@@ -88,7 +88,7 @@
         return fetch(endpoint + "?connection_check=" + Date.now(), options);
       }).then(function (response) {
         stage = "HTTP " + response.status + " получен за " + seconds(Date.now() - started) + " с";
-        if (!response.ok) throw new Error("HTTP " + response.status);
+        if (response.status !== (expectedStatus || 200)) throw new Error("HTTP " + response.status);
         return response.text();
       }).then(function (text) {
         finish(true, validate(text) + ". " + stage);
@@ -100,15 +100,15 @@
     check("read", "Чтение", { method: "GET", cache: "no-store" }, function (text) {
       var rows = JSON.parse(text);
       if (!Array.isArray(rows)) throw new Error("Получен ответ без списка отзывов");
-      return "Google вернул список отзывов";
+      return "Сервер получил список отзывов из Google Таблицы";
     });
-    // Заведомо невалидный JSON: doPost завершится в JSON.parse до appendRow.
+    // Заведомо невалидный JSON: сервер отклонит его до записи в таблицу.
     check("post", "Прием запроса", {
       method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: '{"diagnostic":'
     }, function (text) {
-      if (!/^error:/i.test(text.trim())) throw new Error("Получен неожиданный ответ сервиса");
-      return "Google обработал проверочный запрос без создания отзыва";
-    });
+      if (!JSON.parse(text).error) throw new Error("Получен неожиданный ответ сервиса");
+      return "Сервер отклонил проверочный запрос без создания отзыва";
+    }, 400);
     document.getElementById("copy").addEventListener("click", function () {
       var field = document.getElementById("report");
       if (navigator.clipboard && navigator.clipboard.writeText) {
