@@ -1077,19 +1077,15 @@
     panel.appendChild(back);
 
     panel.appendChild(el("h1", "results-title", "Как вам тренажер?"));
-    panel.appendChild(el("p", "results-lead", "Оцените пользу тренажера. Если хотите, оставьте комментарий."));
+    panel.appendChild(el("p", "results-lead", "Оцените пользу тренажера и, если хотите, оставьте комментарий."));
 
     var q1 = el("div", "survey-q");
     q1.appendChild(el("div", "survey-q-text", "Насколько полезен был тренажер?"));
-    var scale = el("div", "survey-scale");
-    scale.appendChild(el("span", "survey-scale-label", "1 — совсем не полезен"));
-    scale.appendChild(el("span", "survey-scale-label", "5 — очень полезен"));
-    q1.appendChild(scale);
     q1.appendChild(ratingButtons("rating"));
     panel.appendChild(q1);
 
     var q2 = el("div", "survey-q");
-    q2.appendChild(el("div", "survey-q-text", "Комментарий — необязательно"));
+    q2.appendChild(el("div", "survey-q-text", "Комментарий (необязательно)"));
     var ta = el("textarea", "survey-textarea");
     ta.rows = 4;
     ta.placeholder = "Что было полезно и что стоит улучшить?";
@@ -1113,22 +1109,28 @@
   }
 
   function ratingButtons(key) {
-    var wrap = el("div", "rating");
+    var wrap = el("div", "rating-wrap");
+    var row = el("div", "rating");
     for (var i = 1; i <= 5; i++) {
       (function (val) {
         var b = el("button", "rating-btn", String(val));
         b.addEventListener("click", function () {
           state.survey = state.survey || {};
           state.survey[key] = val;
-          var all = wrap.querySelectorAll(".rating-btn");
+          var all = row.querySelectorAll(".rating-btn");
           all.forEach(function (x) { x.classList.remove("rating-btn-active"); });
           b.classList.add("rating-btn-active");
           var submit = document.getElementById("survey-submit");
           if (submit) submit.disabled = false;
         });
-        wrap.appendChild(b);
+        row.appendChild(b);
       })(i);
     }
+    wrap.appendChild(row);
+    var labels = el("div", "rating-labels");
+    labels.appendChild(el("span", "rating-label", "1 — совсем не полезен"));
+    labels.appendChild(el("span", "rating-label", "5 — очень полезен"));
+    wrap.appendChild(labels);
     return wrap;
   }
 
@@ -1157,7 +1159,7 @@
     var panel = el("div", "results-panel");
 
     panel.appendChild(el("h1", "results-title", "Спасибо за обратную связь!"));
-    panel.appendChild(el("p", "results-lead", "Спасибо, что прошли тренажер. Возвращайтесь к разборам, когда захотите прокачать насмотренность на дарк-паттерны."));
+    panel.appendChild(el("p", "results-lead", "Ваш отзыв отправлен. Он поможет сделать тренажер полезнее."));
 
     var actions = el("div", "results-actions");
     var restart = el("button", "btn btn-primary btn-md", "Пройти еще раз");
