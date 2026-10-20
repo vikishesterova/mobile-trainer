@@ -1089,19 +1089,48 @@
     var ta = el("textarea", "survey-textarea");
     ta.rows = 4;
     ta.placeholder = "Что было полезно и что стоит улучшить?";
+    ta.value = state.survey && state.survey.comment || "";
     q2.appendChild(ta);
     panel.appendChild(q2);
 
     var submit = el("button", "btn btn-primary", "Отправить оценку");
-    submit.disabled = true;
+    submit.disabled = !(state.survey && state.survey.rating);
     submit.id = "survey-submit";
+    var sending = false;
+    var error = el("p", "survey-error");
+    error.setAttribute("role", "alert");
+    error.hidden = true;
     submit.addEventListener("click", function () {
+      if (sending) return;
       state.survey = state.survey || {};
+      if (!state.survey.rating) return;
       state.survey.comment = ta.value;
-      track("survey_submit", { rating: state.survey.rating || null, hasComment: !!(ta.value && ta.value.trim()) });
-      sendSurveyToSheet(state.survey);
-      renderThanks();
+      sending = true;
+      error.hidden = true;
+      submit.disabled = true;
+      submit.textContent = "Отправляем…";
+      back.disabled = true;
+      ta.disabled = true;
+      var ratings = q1.querySelectorAll(".rating-btn");
+      ratings.forEach(function (button) { button.disabled = true; });
+      sendSurveyToSheet(state.survey)
+        .then(function () {
+          track("survey_submit", { rating: state.survey.rating, hasComment: !!state.survey.comment.trim() });
+          renderThanks();
+        })
+        .catch(function () {
+          sending = false;
+          submit.disabled = false;
+          submit.textContent = "Отправить еще раз";
+          back.disabled = false;
+          ta.disabled = false;
+          ratings.forEach(function (button) { button.disabled = false; });
+          error.textContent = "Не удалось подтвердить отправку. Проверьте подключение и попробуйте еще раз. Ваш текст сохранен в форме.";
+          error.hidden = false;
+          track("survey_submit_error");
+        });
     });
+    panel.appendChild(error);
     panel.appendChild(submit);
 
     wrap.appendChild(panel);
@@ -1114,6 +1143,7 @@
     for (var i = 1; i <= 5; i++) {
       (function (val) {
         var b = el("button", "rating-btn", String(val));
+        if (state.survey && state.survey[key] === val) b.classList.add("rating-btn-active");
         b.addEventListener("click", function () {
           state.survey = state.survey || {};
           state.survey[key] = val;
@@ -1136,19 +1166,34 @@
 
   // отправка обратной связи в Google Таблицу (Apps Script Web App)
   function sendSurveyToSheet(survey) {
-    if (!SURVEY_ENDPOINT) return;
-    try {
-      fetch(SURVEY_ENDPOINT, {
+    if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, 20000);
+    return Promise.resolve().then(function () {
+      return fetch(SURVEY_ENDPOINT, {
         method: "POST",
         mode: "cors",
+        credentials: "omit",
+        keepalive: true,
+        signal: controller.signal,
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           rating: survey.rating || null,
           comment: survey.comment || "",
           date: new Date().toISOString()
         })
-      }).catch(function () {});
-    } catch (e) {}
+      });
+    }).then(function (response) {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.text();
+    }).then(function (body) {
+      if (body.trim() !== "ok") throw new Error("Feedback was not acknowledged");
+    }).then(function () {
+      clearTimeout(timer);
+    }, function (err) {
+      clearTimeout(timer);
+      throw err;
+    });
   }
 
   // ============================================================================

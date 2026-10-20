@@ -25,6 +25,7 @@
       padding: 10px 18px; border-radius: 12px; font-size: 15px; font-weight: 700;
     }
     .refresh:active { transform: translateY(1px); }
+    .refresh:disabled { opacity: .65; cursor: wait; }
     .stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 24px; }
     .stat {
       flex: 1; min-width: 130px; background: var(--surface);
@@ -72,7 +73,7 @@
     </header>
 
     <div class="stats" id="stats"></div>
-    <div id="status"></div>
+    <div id="status" role="status" aria-live="polite"></div>
     <div class="list" id="list"></div>
     <div class="note">Данные подтягиваются из Google Таблицы. Требуется доступ к интернету.</div>
   </div>
@@ -81,6 +82,7 @@
     // URL Google Apps Script (Web App) — тот же, что в тренажере.
     // Подставьте реальный URL после настройки таблицы.
     var DATA_ENDPOINT = "https://script.google.com/macros/s/AKfycby8k4_UduJDaFDiRZMVXlPdGBpeUPEgex8bbo2uqVyVLb-aV3LpsmOQLHJ68lIRT-er/exec";
+    var loading = false;
 
     function esc(s) {
       var d = document.createElement("div");
@@ -96,9 +98,11 @@
     }
 
     function load() {
+      if (loading) return;
       var status = document.getElementById("status");
       var list = document.getElementById("list");
       var stats = document.getElementById("stats");
+      var refresh = document.getElementById("refresh");
 
       if (!DATA_ENDPOINT) {
         status.innerHTML = '<div class="error">Дашборд ещё не подключен: вставьте URL Apps Script в DATA_ENDPOINT.</div>';
@@ -107,18 +111,30 @@
         return;
       }
 
-      status.innerHTML = '<div class="loading">Загружаем ответы…</div>';
-      fetch(DATA_ENDPOINT, { method: "GET", mode: "cors" })
+      loading = true;
+      refresh.disabled = true;
+      refresh.textContent = "Обновляем…";
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 20000);
+      if (!list.innerHTML) status.innerHTML = '<div class="loading">Загружаем ответы…</div>';
+      var url = DATA_ENDPOINT + (DATA_ENDPOINT.indexOf("?") === -1 ? "?" : "&") + "t=" + Date.now();
+      Promise.resolve().then(function () {
+        return fetch(url, { method: "GET", mode: "cors", credentials: "omit", cache: "no-store", signal: controller.signal });
+      })
         .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
         .then(function (data) {
+          if (!Array.isArray(data)) throw new Error(data && data.error || "Сервис вернул некорректный ответ");
           status.innerHTML = "";
-          var rows = Array.isArray(data) ? data : [];
-          render(rows);
+          render(data);
         })
         .catch(function (err) {
           status.innerHTML = '<div class="error">Не удалось загрузить данные: ' + esc(err.message) + ".</div>";
-          list.innerHTML = "";
-          stats.innerHTML = "";
+        })
+        .then(function () {
+          clearTimeout(timer);
+          loading = false;
+          refresh.disabled = false;
+          refresh.textContent = "Обновить";
         });
     }
 
@@ -164,6 +180,9 @@
     }
 
     document.getElementById("refresh").addEventListener("click", load);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) load(); });
+    window.addEventListener("focus", load);
+    setInterval(function () { if (!document.hidden) load(); }, 30000);
     load();
   </script>
 </body>

@@ -1814,6 +1814,15 @@ body {
 .survey-textarea::placeholder { color: #9b95a6; }
 .survey-textarea:focus { border-color: #7151ad; }
 .survey-q-text { color: #292633; }
+.survey-error {
+  color: #a52e4b;
+  background: #fce7eb;
+  border: 1px solid #f0c5ce;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
 .scale-btn { color: #292633; background: #ffffff; border: 1px solid #ded6e9; }
 .scale-btn:hover { border-color: #7151ad; }
 .scale-btn-active { border-color: #7151ad; background: #ede6f7; color: #7151ad; }
