@@ -1103,6 +1103,7 @@
       state.survey = state.survey || {};
       state.survey.comment = ta.value;
       track("survey_submit", { rating: state.survey.rating || null, hasComment: !!(ta.value && ta.value.trim()) });
+      sendSurveyToSheet(state.survey);
       renderThanks();
     });
     panel.appendChild(submit);
@@ -1129,6 +1130,23 @@
       })(i);
     }
     return wrap;
+  }
+
+  // отправка обратной связи в Google Таблицу (Apps Script Web App)
+  function sendSurveyToSheet(survey) {
+    if (!SURVEY_ENDPOINT) return;
+    try {
+      fetch(SURVEY_ENDPOINT, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          rating: survey.rating || null,
+          comment: survey.comment || "",
+          date: new Date().toISOString()
+        })
+      }).catch(function () {});
+    } catch (e) {}
   }
 
   // ============================================================================
