@@ -1230,16 +1230,20 @@
   function sendSurveyToSheet(survey) {
     if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
     var payload = survey.delivery;
+    // У старых черновиков наличие delivery означает, что отправка уже начиналась.
+    var retry = !!payload;
     if (!payload || payload.rating !== survey.rating || payload.comment !== (survey.comment || "") || !isFinite(new Date(payload.date).getTime())) {
       payload = { date: new Date().toISOString(), rating: survey.rating, comment: survey.comment || "" };
       survey.delivery = payload;
+      retry = false;
     }
+    payload.attempted = true;
     saveSurveyDraft(survey);
     return surveyRequest(function (signal) {
       return fetch(SURVEY_ENDPOINT, {
         method: "POST", mode: "cors", redirect: "follow", credentials: "omit", signal: signal,
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment })
+        body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment, retry: retry })
       }).then(function (response) {
         return response.text().then(function (text) {
           if (response.ok && text.trim() === "ok") return;
