@@ -1069,11 +1069,12 @@
   // ============================================================================
   function renderSurvey() {
     track("survey_open");
+    state.survey = state.survey || restoreSurveyDraft();
     var wrap = el("div", "screen");
     var panel = el("div", "results-panel");
 
-    var back = el("button", "btn-nav", "← Назад к результатам");
-    back.addEventListener("click", renderResults);
+    var back = el("button", "btn-nav", state.answers.length ? "← Назад к результатам" : "На главную");
+    back.addEventListener("click", state.answers.length ? renderResults : goHome);
     panel.appendChild(back);
 
     panel.appendChild(el("h1", "results-title", "Как вам тренажер?"));
@@ -1090,6 +1091,11 @@
     ta.rows = 4;
     ta.placeholder = "Что было полезно и что стоит улучшить?";
     ta.value = state.survey && state.survey.comment || "";
+    ta.addEventListener("input", function () {
+      state.survey = state.survey || {};
+      state.survey.comment = ta.value;
+      saveSurveyDraft(state.survey);
+    });
     q2.appendChild(ta);
     panel.appendChild(q2);
 
@@ -1105,6 +1111,7 @@
       state.survey = state.survey || {};
       if (!state.survey.rating) return;
       state.survey.comment = ta.value;
+      saveSurveyDraft(state.survey);
       sending = true;
       error.hidden = true;
       submit.disabled = true;
@@ -1113,19 +1120,21 @@
       ta.disabled = true;
       var ratings = q1.querySelectorAll(".rating-btn");
       ratings.forEach(function (button) { button.disabled = true; });
-      sendSurveyToSheet(state.survey)
+      sendSurveyToSheet(state.survey, function () { submit.textContent = "Проверяем запись…"; })
         .then(function () {
           track("survey_submit", { rating: state.survey.rating, hasComment: !!state.survey.comment.trim() });
+          clearSurveyDraft();
           renderThanks();
         })
-        .catch(function () {
+        .catch(function (err) {
           sending = false;
           submit.disabled = false;
           submit.textContent = "Отправить еще раз";
           back.disabled = false;
           ta.disabled = false;
           ratings.forEach(function (button) { button.disabled = false; });
-          error.textContent = "Не удалось подтвердить отправку. Проверьте подключение и попробуйте еще раз. Ваш текст сохранен в форме.";
+          error.textContent = (err.userMessage || "Не удалось подтвердить запись в Google Таблице. Попробуйте еще раз.") +
+            (saveSurveyDraft(state.survey) ? " Отзыв сохранен на этом устройстве." : " Текст остался в форме.");
           error.hidden = false;
           track("survey_submit_error");
         });
@@ -1147,6 +1156,7 @@
         b.addEventListener("click", function () {
           state.survey = state.survey || {};
           state.survey[key] = val;
+          saveSurveyDraft(state.survey);
           var all = row.querySelectorAll(".rating-btn");
           all.forEach(function (x) { x.classList.remove("rating-btn-active"); });
           b.classList.add("rating-btn-active");
@@ -1164,36 +1174,114 @@
     return wrap;
   }
 
-  // отправка обратной связи в Google Таблицу (Apps Script Web App)
-  function sendSurveyToSheet(survey) {
-    if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
-    var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, 20000);
-    return Promise.resolve().then(function () {
-      return fetch(SURVEY_ENDPOINT, {
-        method: "POST",
-        mode: "cors",
-        credentials: "omit",
-        keepalive: true,
-        signal: controller.signal,
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          rating: survey.rating || null,
-          comment: survey.comment || "",
-          date: new Date().toISOString()
-        })
+  var SURVEY_DRAFT_KEY = "dark-patterns-survey-draft-v1";
+
+  function saveSurveyDraft(survey) {
+    try {
+      window.localStorage.setItem(SURVEY_DRAFT_KEY, JSON.stringify(survey));
+      return true;
+    } catch (err) { return false; }
+  }
+
+  function restoreSurveyDraft() {
+    try {
+      var draft = JSON.parse(window.localStorage.getItem(SURVEY_DRAFT_KEY));
+      if (!draft || typeof draft.comment !== "string" || [1, 2, 3, 4, 5].indexOf(draft.rating) < 0) return null;
+      return draft;
+    } catch (err) { return null; }
+  }
+
+  function clearSurveyDraft() {
+    try { window.localStorage.removeItem(SURVEY_DRAFT_KEY); } catch (err) {}
+  }
+
+  // Завершаем ожидание своим таймером, даже если fetch не реагирует на abort.
+  // Таймер охватывает и чтение тела ответа, а не только получение заголовков.
+  function surveyRequest(operation, timeout) {
+    return new Promise(function (resolve, reject) {
+      var controller = typeof AbortController === "function" ? new AbortController() : null;
+      var finished = false;
+      var timer = setTimeout(function () {
+        if (finished) return;
+        finished = true;
+        var err = new Error("Feedback request timed out");
+        err.userMessage = "Google не ответил вовремя. Проверьте подключение и попробуйте еще раз.";
+        reject(err);
+        if (controller) { try { controller.abort(); } catch (ignored) {} }
+      }, timeout);
+      Promise.resolve().then(function () {
+        return operation(controller ? controller.signal : undefined);
+      }).then(function (result) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        resolve(result);
+      }, function (err) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        reject(err);
       });
-    }).then(function (response) {
-      if (!response.ok) throw new Error("HTTP " + response.status);
-      return response.text();
-    }).then(function (body) {
-      if (body.trim() !== "ok") throw new Error("Feedback was not acknowledged");
-    }).then(function () {
-      clearTimeout(timer);
-    }, function (err) {
-      clearTimeout(timer);
-      throw err;
     });
+  }
+
+  function surveyRecorded(payload) {
+    return surveyRequest(function (signal) {
+      var url = SURVEY_ENDPOINT + (SURVEY_ENDPOINT.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now();
+      return fetch(url, { method: "GET", mode: "cors", credentials: "omit", cache: "no-store", signal: signal })
+        .then(function (response) {
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          return response.json();
+        }).then(function (rows) {
+          if (!Array.isArray(rows)) throw new Error("Invalid feedback response");
+          return rows.some(function (row) {
+            return row && new Date(row.date).getTime() === new Date(payload.date).getTime() &&
+              Number(row.rating) === payload.rating && String(row.comment || "") === payload.comment;
+          });
+        });
+    }, 6000);
+  }
+
+  // Не читаем ответ POST через перенаправление ContentService. Подтверждение —
+  // конкретная строка с теми же датой, оценкой и комментарием в GET-ответе.
+  function sendSurveyToSheet(survey, onVerify) {
+    if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
+    var payload = survey.delivery;
+    if (!payload || payload.rating !== survey.rating || payload.comment !== (survey.comment || "") || !isFinite(new Date(payload.date).getTime())) {
+      payload = { date: new Date().toISOString(), rating: survey.rating, comment: survey.comment || "" };
+      survey.delivery = payload;
+    }
+    var alreadyAttempted = !!payload.attempted;
+
+    function verify() {
+      if (onVerify) onVerify();
+      return surveyRecorded(payload).then(function (recorded) {
+        if (recorded) return;
+        return surveyRecorded(payload).then(function (recordedAgain) {
+          if (!recordedAgain) throw new Error("Feedback row not found");
+        });
+      });
+    }
+
+    function post() {
+      payload.attempted = true;
+      saveSurveyDraft(survey);
+      return surveyRequest(function (signal) {
+        return fetch(SURVEY_ENDPOINT, {
+          method: "POST", mode: "no-cors", redirect: "manual", credentials: "omit", signal: signal,
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment })
+        });
+      }, 8000).then(verify, verify);
+    }
+
+    // При повторе сначала ищем прежнюю запись: потерянное подтверждение
+    // не должно приводить к повторной отправке того же отзыва.
+    if (alreadyAttempted) return surveyRecorded(payload).then(function (recorded) {
+      if (recorded) return;
+      return post();
+    });
+    return post();
   }
 
   // ============================================================================
@@ -1217,5 +1305,6 @@
   }
 
   // --- запуск --------------------------------------------------------------------
-  renderIntro();
+  if (new URLSearchParams(window.location.search).get("feedback") === "1") renderSurvey();
+  else renderIntro();
 })();
