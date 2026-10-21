@@ -45,7 +45,7 @@ const DEFAULT_QUESTION = "Какое ожидание сформируется �
 
 // Сервер проверяет сохранение отзыва в Google Таблице.
 // Браузер обращается к этому адресу без прямого запроса к Google.
-const SURVEY_ENDPOINT = "https://mobile-trainer-feedback-relay.michellegreenrlg81.chatgpt.site/api/feedback";
+const SURVEY_ENDPOINT = "https://feedback.michellegreenrlg81.chatgpt.site/api/feedback";
 
 const CASES = [
   // --------------------------------------------------------------------------
