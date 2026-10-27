@@ -1926,8 +1926,10 @@ body {
 .intro-body { font-size: 16px; max-width: 62ch; margin-bottom: 30px; }
 
 /* --- Три варианта оценки — раскрывающиеся блоки --- */
+.intro-panel { background: #f5f2fa; }
 .eval-block { margin: 0 0 26px; }
-.eval-block .intro-subhead { margin: 0 0 14px; font-size: 17px; font-weight: 500; }
+.eval-block .intro-subhead { margin: 0 0 6px; font-size: 17px; font-weight: 500; }
+.intro-caption { font-size: 14px; color: #686273; line-height: 1.5; margin: 0 0 14px; font-weight: 400; }
 .eval-item {
   background: #ffffff;
   border: 1px solid #ded6e9;
@@ -1936,7 +1938,7 @@ body {
   overflow: hidden;
 }
 .eval-item.eval-dp { background: #fdecee; border-color: #e8a8b0; }
-.eval-item.eval-man { background: #f3eff9; border-color: #dccfec; }
+.eval-item.eval-man { background: #ffe6cc; border-color: #f2c896; }
 .eval-item.eval-ok { background: #eef7f1; border-color: #cde6d6; }
 .eval-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1952,7 +1954,9 @@ body {
 }
 .eval-item.open .eval-caret { transform: rotate(180deg); }
 .eval-body { padding: 0 16px 16px; }
-.eval-text { font-size: 14px; color: #4b5263; line-height: 1.55; font-weight: 400; }
+.eval-line { font-size: 14px; color: #4b5263; line-height: 1.55; font-weight: 400; margin-bottom: 6px; }
+.eval-line:last-child { margin-bottom: 0; }
+.eval-bullet { padding-left: 14px; }
 
 /* --- Как проходить тренажер --- */
 .pass-block { margin: 0 0 26px; }

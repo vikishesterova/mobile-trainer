@@ -628,7 +628,7 @@
     var cover = el("div", "intro-screen cover");
     cover.appendChild(el("h1", "cover-title", "Смотрим на текст глазами клиента"));
     var cards = el("div", "cover-cards");
-    cards.appendChild(coverCard("Пуш", "off1"));
+    cards.appendChild(coverCard("Пуш-уведомление", "off1"));
     cards.appendChild(coverCard("Письмо", "off2"));
     cards.appendChild(coverCard("Баннер", "off3"));
     cover.appendChild(cards);
@@ -639,29 +639,30 @@
     wrap.appendChild(left);
 
     // Правая колонка: вводная
-    var panel = el("div", "panel");
+    var panel = el("div", "panel intro-panel");
     panel.appendChild(el("h1", "intro-heading", "Дарк-паттерны в тексте"));
     panel.appendChild(el("p", "intro-body",
-      "Потренируйтесь замечать выдуманные факты, давление и неоднозначные обещания в сообщениях для клиентов. Сравнивайте текст с условиями продукта и проверяйте, что из него может понять клиент."));
+      "Потренируйтесь замечать, когда текст вводит клиента в заблуждение или давит на него"));
 
     // Три варианта оценки — раскрывающиеся блоки
     var evalBlock = el("div", "eval-block");
     evalBlock.appendChild(el("div", "intro-subhead", "Как оцениваем тексты"));
-    evalBlock.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта.", "dp"));
-    evalBlock.appendChild(evalItem("Манипуляция или неоднозначная подача", "Текст давит на чувство вины или самооценку, показывает только одну сторону сравнения, намекает на неподтвержденный результат или дает обещание без важного уточнения. При этом неоднозначная формулировка сама по себе не доказывает намеренную манипуляцию.", "man"));
-    evalBlock.appendChild(evalItem("Корректное предложение", "Текст соответствует условиям продукта и позволяет понять важные ограничения. Реальные сроки, лимиты и остатки мест сами по себе не считаем дарк-паттернами.", "ok"));
+    evalBlock.appendChild(el("p", "intro-caption", "В этом тренажере используем три варианта оценки"));
+    evalBlock.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта", "dp"));
+    evalBlock.appendChild(evalItem("Манипуляция или неоднозначная подача", "Так оцениваем текст, если он:\n— давит на чувство вины или самооценку\n— показывает только выгодную сторону сравнения\n— намекает на результат без подтверждения\n— дает обещание без важного уточнения\n\nНеоднозначная фраза еще не значит, что клиентом намеренно манипулируют. В разборе покажем, в чем именно проблема", "man"));
+    evalBlock.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта, а важные ограничения понятны клиенту. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
     panel.appendChild(evalBlock);
 
     // Как проходить
     var passBlock = el("div", "pass-block");
     passBlock.appendChild(el("div", "intro-subhead", "Как проходить тренажер"));
     var passList = el("div", "pass-list");
-    passList.appendChild(passRow("doc", "Прочитайте сообщение для клиента, изучите условия продукта и ответьте на вопрос к примеру."));
-    passList.appendChild(passRow("pick", "После выбора ответа покажем оценку и разбор. Если в тексте есть проблема, назовем ее и покажем, как исправить сообщение. Если предложение корректное, поясним почему."));
+    passList.appendChild(passRow("doc", "Сравните текст в телефоне с условиями продукта и выберите ответ"));
+    passList.appendChild(passRow("pick", "После ответа разберем пример: покажем, что не так с текстом и как его исправить. Если все в порядке, расскажем почему"));
     passBlock.appendChild(passList);
     panel.appendChild(passBlock);
 
-    panel.appendChild(el("div", "intro-note", "Все ситуации учебные, а тексты и оформление условные."));
+    panel.appendChild(el("div", "intro-note", "Все примеры учебные"));
 
     var actions = el("div", "panel-actions");
     var goBtn = el("button", "btn btn-primary", "Начать тренировку");
@@ -674,7 +675,7 @@
     });
     actions.appendChild(goBtn);
     panel.appendChild(actions);
-    panel.appendChild(el("div", "intro-count", "Всего " + CASES.length + " кейсов"));
+    panel.appendChild(el("div", "intro-count", CASES.length + " заданий"));
 
     wrap.appendChild(panel);
     render(wrap);
@@ -689,8 +690,14 @@
     head.appendChild(titleEl);
     head.appendChild(caret);
     var body = el("div", "eval-body");
-    var textEl = el("div", "eval-text", text);
-    body.appendChild(textEl);
+    var lines = String(text).split("\n");
+    lines.forEach(function (line, i) {
+      var isBullet = /^\s*—/.test(line);
+      var el2 = el("div", isBullet ? "eval-line bullet" : "eval-line");
+      el2.textContent = line.trim();
+      if (isBullet) el2.classList.add("eval-bullet");
+      body.appendChild(el2);
+    });
     body.style.display = "none";
     item.appendChild(head);
     item.appendChild(body);
