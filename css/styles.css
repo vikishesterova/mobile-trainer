@@ -2259,16 +2259,27 @@ body {
   box-shadow: 0 0 0 1px rgba(198, 138, 20, 0.35);
 }
 
-/* телефон: индикатор показываемой версии */
-.phone-mode {
-  font-size: 12px; font-weight: 700;
-  color: #686273;
-  border: 1px solid #ded6e9; background: #ffffff;
-  border-radius: 999px;
-  padding: 4px 12px;
-  align-self: flex-start;
+/* переключатель «Было / Стало» — над телефоном, в его колонке */
+.src-toggle {
+  display: flex; gap: 6px;
+  background: #f3eef9;
+  border: 1px solid #ded6e9;
+  border-radius: 12px;
+  padding: 4px;
+  width: 100%;
+  max-width: 330px;
+  box-sizing: border-box;
 }
-.phone-mode.on { color: #557963; border-color: #c9e0d2; background: #f0f7f2; }
+.seg {
+  flex: 1 1 0; min-width: 0;
+  border: none; border-radius: 9px; cursor: pointer;
+  background: transparent; color: #686273;
+  font-family: var(--font); font-size: 14px; font-weight: 600;
+  padding: 9px 12px;
+  transition: background .15s ease, color .15s ease;
+}
+.seg:hover { color: #292633; }
+.seg-active { background: #e4dcf6; color: #7151ad; box-shadow: none; }
 
 /* разбор: отступы между самостоятельными блоками */
 .panel-next { margin-top: 26px; }
@@ -2295,18 +2306,6 @@ body {
 .ans-text { font-size: 15px; line-height: 1.5; }
 .ans-row.secondary .ans-text { color: #6b6470; font-weight: 400; }
 .ans-row.primary .ans-text { color: #292633; font-weight: 600; }
-
-/* кнопка показа исправленного текста (вторичное действие) */
-.btn-view {
-  display: inline-flex; align-items: center; justify-content: center;
-  margin-top: 18px; width: 100%;
-  font-family: var(--font); font-size: 15px; font-weight: 700;
-  color: #7151ad; background: #ffffff;
-  border: 1.5px solid #7151ad; border-radius: 12px;
-  padding: 12px 16px; cursor: pointer;
-  transition: background .15s ease, color .15s ease;
-}
-.btn-view:hover { background: #f3eef9; }
 
 /* разбор: «Что не так» / «Почему текст корректный» — белый блок */
 .explain-card {

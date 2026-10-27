@@ -1018,31 +1018,7 @@
     // 3. разбор
     panel.appendChild(messageEvaluation(c));
 
-    // 4. кнопка показа исправленного текста (единый переключатель версии в телефоне)
-    var hasExample = !!(c.breakdown && c.breakdown.example);
-    var viewMode = "source";
-    var viewBtn = null;
-
-    function setViewMode(m) {
-      viewMode = m;
-      renderAnswerPhone(phoneCol, c, m);
-      if (viewBtn) {
-        viewBtn.textContent = m === "fixed" ? "Показать исходный текст" : "Посмотреть исправленный текст";
-      }
-    }
-
-    if (hasExample) {
-      viewBtn = el("button", "btn-view", "Посмотреть исправленный текст");
-      viewBtn.setAttribute("type", "button");
-      viewBtn.addEventListener("click", function () {
-        var next = viewMode === "fixed" ? "source" : "fixed";
-        setViewMode(next);
-        if (next === "fixed") scrollPhoneIntoView(phoneCol);
-      });
-      panel.appendChild(viewBtn);
-    }
-
-    // 5. кнопка перехода
+    // 4. кнопка перехода
     var isLast = activeIndex() === activeCases().length - 1;
     var nextLabel;
     if (state.mode === "review") nextLabel = isLast ? "Показать итог повторения" : "Следующий кейс";
@@ -1059,32 +1035,58 @@
     nextWrap.appendChild(next);
     panel.appendChild(nextWrap);
 
-    // телефон: исходный вариант по умолчанию
+    // телефон: переключатель «Было/Стало» над ним, по умолчанию «Было»
     renderAnswerPhone(phoneCol, c, "source");
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function scrollPhoneIntoView(phoneCol) {
-    if (!phoneCol) return;
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    phoneCol.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  }
-
-  // телефон разбора: индикатор версии + пример в том же формате
+  // телефон разбора: переключатель «Было/Стало» над ним + пример в том же формате
   function renderAnswerPhone(phoneCol, c, mode) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
+    var hasExample = !!(c.breakdown && c.breakdown.example);
+    if (hasExample) {
+      phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
+        renderAnswerPhone(phoneCol, c, m);
+      }));
+    }
     var showFixed = mode === "fixed";
     var sd = showFixed ? c.breakdown.example : c.screen;
     var fmt = sd.format || c.screen.format || "landing";
-    if (c.breakdown && c.breakdown.example) {
-      phoneCol.appendChild(el("div", "phone-mode" + (showFixed ? " on" : ""), showFixed ? "Исправленный текст" : "Исходный текст"));
-    }
     var frame = caseFrame(sd);
     if (showFixed) applyHighlight(frame, sd.highlight, "hl-mint");
     else applyHighlight(frame, c.screen && c.screen.highlight, "hl");
     phoneCol.appendChild(frame);
+  }
+
+  // переключатель «Было / Стало» — только если есть исправленный пример
+  function buildSourceToggle(c, activeMode, onToggle) {
+    var bar = el("div", "src-toggle");
+    if (!(c.breakdown && c.breakdown.example)) return bar;
+    bar.setAttribute("role", "group");
+    bar.setAttribute("aria-label", "Сравнить исходное и исправленное сообщение");
+    bar.appendChild(toggleSeg("Было", "source", activeMode !== "fixed", onToggle));
+    bar.appendChild(toggleSeg("Стало", "fixed", activeMode === "fixed", onToggle));
+    return bar;
+  }
+
+  function toggleSeg(label, mode, active, onToggle) {
+    var b = el("button", "seg" + (active ? " seg-active" : ""));
+    b.setAttribute("type", "button");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.addEventListener("click", function () {
+      var segs = b.parentNode.querySelectorAll(".seg");
+      segs.forEach(function (s) {
+        s.classList.remove("seg-active");
+        s.setAttribute("aria-pressed", "false");
+      });
+      b.classList.add("seg-active");
+      b.setAttribute("aria-pressed", "true");
+      onToggle(mode);
+    });
+    return b;
   }
 
   // результат: спокойный статус + компактный список ответов
