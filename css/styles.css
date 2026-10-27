@@ -2259,14 +2259,16 @@ body {
   box-shadow: 0 0 0 1px rgba(198, 138, 20, 0.35);
 }
 
-/* переключатель «Исходный / Исправленный» */
+/* переключатель «Было / Стало» — под телефоном, в левой колонке */
 .src-toggle {
   display: flex; gap: 6px;
   background: #f3eef9;
   border: 1px solid #ded6e9;
   border-radius: 12px;
   padding: 4px;
-  margin-bottom: 16px;
+  width: 100%;
+  max-width: 330px;
+  box-sizing: border-box;
 }
 .seg {
   flex: 1 1 0; min-width: 0;
@@ -2279,24 +2281,51 @@ body {
 .seg:hover { color: #292633; }
 .seg-active { background: #ffffff; color: #7151ad; box-shadow: 0 1px 4px rgba(41, 38, 51, 0.12); }
 
-/* компактный разбор */
+/* разбор: отступы между самостоятельными блоками */
 .answers-compact { gap: 10px; margin-bottom: 16px; }
-.cause-card { padding: 16px 18px; }
-.main-thought { padding: 16px 18px; margin-top: 14px; }
+.result-plaque { margin-bottom: 18px; }
+.result-status { margin-bottom: 14px; }
+.panel-next { margin-top: 26px; }
 
-/* «Подробнее» — сворачиваемый разбор */
-.detail { margin: 18px 0 22px; }
-.detail-head {
+/* оценка сообщения: категория отдельно от результата пользователя */
+.eval-message {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  width: 100%;
-  background: #f3eef9; border: 1px solid #ded6e9; border-radius: 12px;
-  cursor: pointer; font-family: var(--font); text-align: left;
-  padding: 13px 16px;
+  margin: 2px 0 12px;
 }
-.detail-title { font-size: 16px; font-weight: 700; color: #292633; }
-.detail-caret { color: #7151ad; font-size: 14px; transition: transform .2s ease; }
-.detail.open .detail-caret { transform: rotate(180deg); }
-.detail-body { padding-top: 14px; }
+.eval-message-label { font-size: 16px; font-weight: 800; color: #292633; }
+.eval-message-type {
+  flex: none;
+  font-size: 12px; font-weight: 700;
+  color: #7151ad; background: #ede6f7;
+  border-radius: 999px; padding: 5px 12px;
+}
+.eval-message + .bs-card { margin-top: 0; }
+
+/* блок «Как можно исправить» — отдельная мятная подложка */
+.fix-block {
+  background: #eaf7ef;
+  border: 1px solid #c4e3d2;
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 20px;
+}
+.fix-title { font-size: 16px; font-weight: 800; color: #14351f; margin: 0 0 8px; }
+.fix-note { font-size: 15px; color: #1d3a27; line-height: 1.55; margin: 0 0 12px; }
+.fix-block .ex-preview { margin-top: 0; }
+
+/* исправленный пример: подпись формата и кнопка (сохраняем структуру сообщения) */
+.ex-format {
+  font-size: 12px; font-weight: 700; color: #7151ad; background: #ede6f7;
+  align-self: flex-start; border-radius: 999px; padding: 4px 10px;
+  margin-bottom: 4px;
+}
+.ex-cta {
+  margin-top: 6px;
+  align-self: flex-start;
+  font-size: 14px; font-weight: 700;
+  color: #fff; background: #7151ad;
+  border-radius: 10px; padding: 9px 16px;
+}
 
 /* предупреждение о несовместимом прогрессе */
 .intro-warn {
@@ -2307,7 +2336,7 @@ body {
 
 /* видимый фокус для клавиатуры */
 a:focus-visible, button:focus-visible, .option:focus-visible,
-.seg:focus-visible, .eval-head:focus-visible, .detail-head:focus-visible,
+.seg:focus-visible, .eval-head:focus-visible,
 .mistake-head:focus-visible, textarea:focus-visible, input:focus-visible {
   outline: 3px solid #7151ad;
   outline-offset: 2px;

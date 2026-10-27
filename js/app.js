@@ -1007,26 +1007,25 @@
     c.options.forEach(function (o) { if (o.isCorrect) correctOpt = o; });
     var correct = chosen.isCorrect;
 
-    // телефон: исходная версия (с подсветкой) + переключатель на исправленную
+    // телефон + переключатель «Было / Стало» непосредственно под ним
     renderAnswerPhone(phoneCol, c, "source");
-    if (c.breakdown && c.breakdown.example) {
-      panel.appendChild(buildSourceToggle(c, function (mode) {
-        renderAnswerPhone(phoneCol, c, mode);
-      }));
-    }
 
+    // 1. навигация и прогресс
     panel.appendChild(buildTopNav());
     panel.appendChild(buildProgress(activeIndex(), activeCases().length, state.mode === "review"));
 
-    if (correct) {
-      panel.appendChild(correctPlaque(chosen.text, c));
-    } else {
-      panel.appendChild(el("div", "result-status", "Не совсем"));
-      panel.appendChild(compactAnswers(chosen, correctOpt));
-      panel.appendChild(causeCard(c));
-      panel.appendChild(detailDisclosure(c));
+    // 2. результат ответа пользователя
+    panel.appendChild(resultOfAnswer(correct, chosen, correctOpt));
+
+    // 3. оценка самого сообщения (всегда после ответа)
+    panel.appendChild(messageEvaluation(c));
+
+    // 4. «Как можно исправить» — только для проблемных кейсов с готовым примером
+    if (c.breakdown && !c.breakdown.ok && c.breakdown.example) {
+      panel.appendChild(fixBlock(c));
     }
 
+    // 5. кнопка перехода
     var isLast = activeIndex() === activeCases().length - 1;
     var nextLabel;
     if (state.mode === "review") nextLabel = isLast ? "Показать итог повторения" : "Следующий кейс";
@@ -1039,12 +1038,14 @@
       if (state.mode === "training") saveProgress();
       renderQuiz();
     });
-    panel.appendChild(next);
+    var nextWrap = el("div", "panel-next");
+    nextWrap.appendChild(next);
+    panel.appendChild(nextWrap);
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // телефон разбора: исходный или исправленный пример в том же формате
+  // телефон разбора: исходный или исправленный пример + переключатель под ним
   function renderAnswerPhone(phoneCol, c, mode) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
@@ -1054,16 +1055,21 @@
     var frame = caseFrame(sd);
     if (!showFixed) applyHighlight(frame, c.screen && c.screen.highlight);
     phoneCol.appendChild(frame);
+    if (c.breakdown && c.breakdown.example) {
+      phoneCol.appendChild(buildSourceToggle(c, function (m) {
+        renderAnswerPhone(phoneCol, c, m);
+      }));
+    }
   }
 
-  // переключатель «Исходный / Исправленный» — только если есть исправленный пример
+  // переключатель «Было / Стало» — только если есть исправленный пример
   function buildSourceToggle(c, onToggle) {
     var bar = el("div", "src-toggle");
     if (!(c.breakdown && c.breakdown.example)) return bar;
     bar.setAttribute("role", "group");
-    bar.setAttribute("aria-label", "Показать версию примера");
-    bar.appendChild(toggleSeg("Исходный", "source", true, onToggle));
-    bar.appendChild(toggleSeg("Исправленный", "fixed", false, onToggle));
+    bar.setAttribute("aria-label", "Сравнить исходное и исправленное сообщение");
+    bar.appendChild(toggleSeg("Было", "source", true, onToggle));
+    bar.appendChild(toggleSeg("Стало", "fixed", false, onToggle));
     return bar;
   }
 
@@ -1085,22 +1091,25 @@
     return b;
   }
 
-  function correctPlaque(chosenText, c) {
+  // результат ответа пользователя (не смешиваем с оценкой сообщения)
+  function resultOfAnswer(correct, chosen, correctOpt) {
     var frag = document.createDocumentFragment();
-    var res = el("div", "result-plaque rp-correct");
-    var rHead = el("div", "result-head");
-    rHead.appendChild(el("span", "result-ico", "✓"));
-    rHead.appendChild(el("div", "result-title", "Верно"));
-    res.appendChild(rHead);
-    var resBody = el("div", "result-body");
-    resBody.appendChild(el("div", "result-body-text", chosenText));
-    res.appendChild(resBody);
-    frag.appendChild(res);
-    if (c.breakdown && c.breakdown.ok) {
-      var card = el("div", "bs-card bs-green main-thought");
-      card.appendChild(el("div", "bs-label", "Почему текст можно оставить"));
-      card.appendChild(el("p", "bs-text", c.breakdown.ok));
-      frag.appendChild(card);
+    if (correct) {
+      var res = el("div", "result-plaque rp-correct");
+      var rHead = el("div", "result-head");
+      rHead.appendChild(el("span", "result-ico", "✓"));
+      rHead.appendChild(el("div", "result-title", "Верно"));
+      res.appendChild(rHead);
+      var resBody = el("div", "result-body");
+      resBody.appendChild(el("div", "result-body-text", chosen.text));
+      res.appendChild(resBody);
+      frag.appendChild(res);
+    } else {
+      frag.appendChild(el("div", "result-status", "Не совсем"));
+      var answersWrap = el("div", "answers-block answers-compact");
+      answersWrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
+      answersWrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
+      frag.appendChild(answersWrap);
     }
     return frag;
   }
@@ -1112,59 +1121,38 @@
     return p;
   }
 
-  function compactAnswers(chosen, correctOpt) {
-    var wrap = el("div", "answers-block answers-compact");
-    wrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
-    wrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
+  // оценка самого сообщения: категория + объяснение
+  function messageEvaluation(c) {
+    var frag = document.createDocumentFragment();
+    var b = c.breakdown || {};
+
+    var evalHead = el("div", "eval-message");
+    evalHead.appendChild(el("div", "eval-message-label", "Оценка сообщения"));
+    if (c.type) evalHead.appendChild(el("span", "eval-message-type", c.type));
+    frag.appendChild(evalHead);
+
+    if (b.ok) {
+      var okCard = el("div", "bs-card bs-green");
+      okCard.appendChild(el("div", "bs-label", "Почему текст можно оставить"));
+      okCard.appendChild(el("p", "bs-text", b.ok));
+      frag.appendChild(okCard);
+    } else {
+      var pCard = el("div", "bs-card bs-lav");
+      pCard.appendChild(el("div", "bs-label", "В чем проблема"));
+      pCard.appendChild(el("p", "bs-text", b.problem));
+      frag.appendChild(pCard);
+    }
+    return frag;
+  }
+
+  // отдельный цветной блок «Как можно исправить» с готовым примером в формате
+  function fixBlock(c) {
+    var b = c.breakdown;
+    var wrap = el("div", "fix-block");
+    wrap.appendChild(el("div", "fix-title", "Как можно исправить"));
+    if (b.fix) wrap.appendChild(el("p", "fix-note", b.fix));
+    wrap.appendChild(buildExamplePreview(b.example));
     return wrap;
-  }
-
-  function firstSentence(s) {
-    if (!s) return "";
-    var i = s.indexOf(". ");
-    if (i === -1) { i = s.indexOf("."); if (i === -1) return s; return s.slice(0, i + 1); }
-    return s.slice(0, i + 1);
-  }
-
-  function causeCard(c) {
-    var b = c.breakdown || {};
-    var card = el("div", "bs-card bs-lav cause-card");
-    card.appendChild(el("div", "bs-label", "Главная причина"));
-    card.appendChild(el("p", "bs-text", firstSentence(b.problem) || b.fix || "Ответ не совпал с условиями задания"));
-    return card;
-  }
-
-  // подробный разбор — сворачивается в «Подробнее»
-  function detailDisclosure(c) {
-    var b = c.breakdown || {};
-    if (!b.problem && !b.fix) return el("div");
-    var item = el("div", "detail");
-    var head = el("button", "detail-head");
-    head.setAttribute("type", "button");
-    head.appendChild(el("span", "detail-title", "Подробнее"));
-    head.appendChild(el("span", "detail-caret", "▾"));
-    var body = el("div", "detail-body");
-    body.style.display = "none";
-    if (b.problem) {
-      var pc = el("div", "bs-card bs-lav");
-      pc.appendChild(el("div", "bs-label", "В чем проблема"));
-      pc.appendChild(el("p", "bs-text", b.problem));
-      body.appendChild(pc);
-    }
-    if (b.fix) {
-      var fc = el("div", "bs-card bs-green");
-      fc.appendChild(el("div", "bs-label", "Как исправить"));
-      fc.appendChild(el("p", "bs-text", b.fix));
-      body.appendChild(fc);
-    }
-    item.appendChild(head);
-    item.appendChild(body);
-    head.addEventListener("click", function () {
-      var open = body.style.display !== "none";
-      body.style.display = open ? "none" : "block";
-      item.classList.toggle("open", !open);
-    });
-    return item;
   }
 
   // финал тренировки: фиксируем результат и сохраняем прогресс
@@ -1267,6 +1255,9 @@
   // исправленный пример: визуальное оформление исходного формата, без кнопки
   function buildExamplePreview(ex) {
     var wrap = el("div", "ex-preview ex-preview-" + (ex.format || "landing"));
+    var fmt = formatLabel(ex.format);
+    if (fmt) wrap.appendChild(el("div", "ex-format", fmt));
+
     if (ex.stories && ex.stories.length) {
       var total = ex.stories.length;
       ex.stories.forEach(function (s, i) {
@@ -1289,6 +1280,9 @@
           cards.appendChild(cardEl);
         });
         wrap.appendChild(cards);
+      }
+      if (ex.cta) {
+        wrap.appendChild(el("div", "ex-cta", ex.cta));
       }
     }
     return wrap;
