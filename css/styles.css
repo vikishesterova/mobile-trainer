@@ -1973,6 +1973,8 @@ body {
 
 /* --- Голубая плашка «Как проходить тренажер» --- */
 .intro-steps {
+  display: block;
+  gap: 0;
   background: #eaf2fc;
   border: 1px solid #dbe7f7;
   border-radius: 16px;
@@ -1984,7 +1986,7 @@ body {
   font-weight: 600;
   color: #000;
   opacity: 1;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 .intro-step {
   display: flex;
