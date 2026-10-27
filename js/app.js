@@ -660,6 +660,7 @@
     var stepsBlock = el("div", "intro-steps");
     stepsBlock.appendChild(el("div", "intro-steps-title", "Как проходить тренажер"));
     stepsBlock.appendChild(introStep(1, "Сравните текст в телефоне с условиями продукта и выберите ответ"));
+    stepsBlock.appendChild(el("div", "intro-step-divider"));
     stepsBlock.appendChild(introStep(2, "После ответа разберем пример: покажем, что не так с текстом и как его исправить. Если все в порядке, расскажем почему"));
     panel.appendChild(stepsBlock);
 
