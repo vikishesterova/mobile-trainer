@@ -645,8 +645,8 @@
 
     // Светло-сиреневый блок «Как устроен тренажер»
     var howBlock = el("div", "intro-how");
-    howBlock.appendChild(el("div", "intro-how-title", "Как устроен тренажер"));
-    howBlock.appendChild(el("p", "intro-how-caption", "В тренажере три варианта оценки"));
+    howBlock.appendChild(el("div", "intro-how-title", "Как оцениваем тексты"));
+    howBlock.appendChild(el("p", "intro-how-caption", "Нажмите на название оценки, чтобы прочитать пояснение"));
 
     // Три раскрытия
     var evalWrap = el("div", "eval-list");
@@ -659,13 +659,13 @@
     // Белый блок «Как проходить тренажер»
     var stepsBlock = el("div", "intro-steps");
     stepsBlock.appendChild(el("div", "intro-steps-title", "Как проходить тренажер"));
-    stepsBlock.appendChild(introStep(1, "Сравните текст в телефоне с условиями продукта и выберите ответ"));
+    stepsBlock.appendChild(introStep(1, "Сравните текст в телефоне с условиями продукта и ответьте на вопрос"));
     stepsBlock.appendChild(el("div", "intro-step-divider"));
-    stepsBlock.appendChild(introStep(2, "После ответа разберем пример: покажем, что не так с текстом и как его исправить. Если все в порядке, расскажем почему"));
+    stepsBlock.appendChild(introStep(2, "После ответа покажем оценку текста и пояснение к ней, а при необходимости — исправленный вариант"));
     panel.appendChild(stepsBlock);
 
     // Подпись, счётчик, кнопка
-    panel.appendChild(el("div", "intro-note", "Все примеры учебные"));
+    panel.appendChild(el("div", "intro-note", "Тексты и интерфейсы в заданиях условные"));
 
     var actions = el("div", "panel-actions");
     var goBtn = el("button", "btn btn-primary", "Начать тренировку");
