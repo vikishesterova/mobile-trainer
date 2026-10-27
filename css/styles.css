@@ -2259,71 +2259,70 @@ body {
   box-shadow: 0 0 0 1px rgba(198, 138, 20, 0.35);
 }
 
-/* переключатель «Было / Стало» — под телефоном, в левой колонке */
-.src-toggle {
-  display: flex; gap: 6px;
-  background: #f3eef9;
-  border: 1px solid #ded6e9;
-  border-radius: 12px;
-  padding: 4px;
-  width: 100%;
-  max-width: 330px;
-  box-sizing: border-box;
+/* телефон: индикатор показываемой версии */
+.phone-mode {
+  font-size: 12px; font-weight: 700;
+  color: #686273;
+  border: 1px solid #ded6e9; background: #ffffff;
+  border-radius: 999px;
+  padding: 4px 12px;
+  align-self: flex-start;
 }
-.seg {
-  flex: 1 1 0; min-width: 0;
-  border: none; border-radius: 9px; cursor: pointer;
-  background: transparent; color: #686273;
-  font-family: var(--font); font-size: 14px; font-weight: 600;
-  padding: 9px 12px;
-  transition: background .15s ease, color .15s ease;
-}
-.seg:hover { color: #292633; }
-.seg-active { background: #ffffff; color: #7151ad; box-shadow: 0 1px 4px rgba(41, 38, 51, 0.12); }
+.phone-mode.on { color: #557963; border-color: #c9e0d2; background: #f0f7f2; }
 
 /* разбор: отступы между самостоятельными блоками */
 .panel-next { margin-top: 26px; }
 
-/* результат: вердикт + компактная белая карточка ответов */
+/* результат: спокойный статус + компактный список ответов */
 .verdict-line {
-  font-size: 18px; font-weight: 800; color: #292633; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 9px;
+  font-size: 17px; font-weight: 800; color: #292633;
+  margin-bottom: 10px;
 }
-.vd-correct { color: #397a52; }
-.vd-wrong { color: #c13a44; }
-.answer-card {
+.verdict-line::before {
+  content: ""; width: 9px; height: 9px; border-radius: 50%;
+}
+.vd-correct::before { background: #557963; }
+.vd-wrong::before { background: #95616D; }
+.chosen-text {
+  font-size: 15px; color: #292633; line-height: 1.5;
+  padding-bottom: 4px;
+}
+.answers-plain { display: flex; flex-direction: column; }
+.ans-row { padding: 12px 0; }
+.ans-row + .ans-row { border-top: 1px solid #eee8f8; }
+.ans-caption { font-size: 12px; font-weight: 700; color: #686273; margin-bottom: 4px; }
+.ans-text { font-size: 15px; line-height: 1.5; }
+.ans-row.secondary .ans-text { color: #6b6470; font-weight: 400; }
+.ans-row.primary .ans-text { color: #292633; font-weight: 600; }
+
+/* кнопка показа исправленного текста (вторичное действие) */
+.btn-view {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 18px; width: 100%;
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  color: #7151ad; background: #ffffff;
+  border: 1.5px solid #7151ad; border-radius: 12px;
+  padding: 12px 16px; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-view:hover { background: #f3eef9; }
+
+/* разбор: «Что не так» / «Почему текст корректный» — белый блок */
+.explain-card {
   background: #ffffff;
   border: 1px solid #ded6e9;
   border-radius: 14px;
-  overflow: hidden;
-  margin-bottom: 18px;
+  padding: 16px 18px;
 }
-.answer-row {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 14px 16px;
+.explain-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  border-bottom: 1px solid #eee8f8;
+  padding-bottom: 10px; margin-bottom: 12px;
 }
-.answer-row + .answer-row { border-top: 1px solid #eee8f8; }
-.answer-dot {
-  flex: none; width: 10px; height: 10px; border-radius: 50%;
-  margin-top: 6px;
-}
-.dot-ok { background: #4caf79; }
-.dot-wrong { background: #e5484d; }
-.answer-col { flex: 1; min-width: 0; }
-.answer-caption { font-size: 12px; font-weight: 700; color: #686273; margin-bottom: 4px; }
-.answer-text { font-size: 15px; color: #292633; line-height: 1.5; }
-
-/* разбор: «Что не так» / «Почему текст корректный» */
-.bs-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin-bottom: 10px;
-}
-.bs-head .bs-label { margin-bottom: 0; }
-.bs-type {
-  flex: none;
-  font-size: 12px; font-weight: 700;
-  color: #7151ad; background: #ede6f7;
-  border-radius: 999px; padding: 4px 10px;
-}
+.explain-title { font-size: 16px; font-weight: 800; color: #292633; }
+.explain-cat { font-size: 12px; font-weight: 700; color: #686273; }
+.explain-text { font-size: 15px; color: #3a3642; line-height: 1.55; margin: 0; }
 
 /* мягкая мятная подсветка изменённых фрагментов в «Стало» */
 .hl-mint {

@@ -1018,7 +1018,31 @@
     // 3. разбор
     panel.appendChild(messageEvaluation(c));
 
-    // 4. кнопка перехода
+    // 4. кнопка показа исправленного текста (единый переключатель версии в телефоне)
+    var hasExample = !!(c.breakdown && c.breakdown.example);
+    var viewMode = "source";
+    var viewBtn = null;
+
+    function setViewMode(m) {
+      viewMode = m;
+      renderAnswerPhone(phoneCol, c, m);
+      if (viewBtn) {
+        viewBtn.textContent = m === "fixed" ? "Показать исходный текст" : "Посмотреть исправленный текст";
+      }
+    }
+
+    if (hasExample) {
+      viewBtn = el("button", "btn-view", "Посмотреть исправленный текст");
+      viewBtn.setAttribute("type", "button");
+      viewBtn.addEventListener("click", function () {
+        var next = viewMode === "fixed" ? "source" : "fixed";
+        setViewMode(next);
+        if (next === "fixed") scrollPhoneIntoView(phoneCol);
+      });
+      panel.appendChild(viewBtn);
+    }
+
+    // 5. кнопка перехода
     var isLast = activeIndex() === activeCases().length - 1;
     var nextLabel;
     if (state.mode === "review") nextLabel = isLast ? "Показать итог повторения" : "Следующий кейс";
@@ -1035,82 +1059,53 @@
     nextWrap.appendChild(next);
     panel.appendChild(nextWrap);
 
-    // телефон: переключатель «Было/Стало» над ним, по умолчанию «Было»
+    // телефон: исходный вариант по умолчанию
     renderAnswerPhone(phoneCol, c, "source");
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // телефон разбора: переключатель «Было/Стало» над ним + пример в том же формате
+  function scrollPhoneIntoView(phoneCol) {
+    if (!phoneCol) return;
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    phoneCol.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
+  // телефон разбора: индикатор версии + пример в том же формате
   function renderAnswerPhone(phoneCol, c, mode) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
-    var hasExample = !!(c.breakdown && c.breakdown.example);
-    if (hasExample) {
-      phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
-        renderAnswerPhone(phoneCol, c, m);
-      }));
-    }
     var showFixed = mode === "fixed";
     var sd = showFixed ? c.breakdown.example : c.screen;
     var fmt = sd.format || c.screen.format || "landing";
-    var frame = caseFrame(sd);
-    if (showFixed) {
-      applyHighlight(frame, sd.highlight, "hl-mint");
-    } else {
-      applyHighlight(frame, c.screen && c.screen.highlight, "hl");
+    if (c.breakdown && c.breakdown.example) {
+      phoneCol.appendChild(el("div", "phone-mode" + (showFixed ? " on" : ""), showFixed ? "Исправленный текст" : "Исходный текст"));
     }
+    var frame = caseFrame(sd);
+    if (showFixed) applyHighlight(frame, sd.highlight, "hl-mint");
+    else applyHighlight(frame, c.screen && c.screen.highlight, "hl");
     phoneCol.appendChild(frame);
   }
 
-  // переключатель «Было / Стало» — только если есть исправленный пример
-  function buildSourceToggle(c, activeMode, onToggle) {
-    var bar = el("div", "src-toggle");
-    if (!(c.breakdown && c.breakdown.example)) return bar;
-    bar.setAttribute("role", "group");
-    bar.setAttribute("aria-label", "Сравнить исходное и исправленное сообщение");
-    bar.appendChild(toggleSeg("Было", "source", activeMode !== "fixed", onToggle));
-    bar.appendChild(toggleSeg("Стало", "fixed", activeMode === "fixed", onToggle));
-    return bar;
-  }
-
-  function toggleSeg(label, mode, active, onToggle) {
-    var b = el("button", "seg" + (active ? " seg-active" : ""));
-    b.setAttribute("type", "button");
-    b.textContent = label;
-    b.setAttribute("aria-pressed", active ? "true" : "false");
-    b.addEventListener("click", function () {
-      var segs = b.parentNode.querySelectorAll(".seg");
-      segs.forEach(function (s) {
-        s.classList.remove("seg-active");
-        s.setAttribute("aria-pressed", "false");
-      });
-      b.classList.add("seg-active");
-      b.setAttribute("aria-pressed", "true");
-      onToggle(mode);
-    });
-    return b;
-  }
-
-  // результат: вердикт + одна компактная карточка ответов
+  // результат: спокойный статус + компактный список ответов
   function resultOfAnswer(correct, chosen, correctOpt) {
     var frag = document.createDocumentFragment();
     frag.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Неверно"));
-
-    var card = el("div", "answer-card");
-    card.appendChild(answerRow("Вы выбрали", chosen.text, correct ? "ok" : "wrong"));
-    if (!correct) card.appendChild(answerRow("Верный ответ", correctOpt.text, "ok"));
-    frag.appendChild(card);
+    if (correct) {
+      frag.appendChild(el("div", "chosen-text", chosen.text));
+    } else {
+      var list = el("div", "answers-plain");
+      list.appendChild(ansItem("Вы выбрали", chosen.text, "secondary"));
+      list.appendChild(ansItem("Верный ответ", correctOpt.text, "primary"));
+      frag.appendChild(list);
+    }
     return frag;
   }
 
-  function answerRow(caption, text, accent) {
-    var row = el("div", "answer-row");
-    row.appendChild(el("span", "answer-dot dot-" + accent));
-    var col = el("div", "answer-col");
-    col.appendChild(el("div", "answer-caption", caption));
-    col.appendChild(el("div", "answer-text", text));
-    row.appendChild(col);
+  function ansItem(caption, text, kind) {
+    var row = el("div", "ans-row " + kind);
+    row.appendChild(el("div", "ans-caption", caption));
+    row.appendChild(el("div", "ans-text", text));
     return row;
   }
 
@@ -1119,12 +1114,12 @@
     var frag = document.createDocumentFragment();
     var b = c.breakdown || {};
     var isOk = !!b.ok;
-    var card = el("div", "bs-card " + (isOk ? "bs-green" : "bs-lav"));
-    var head = el("div", "bs-head");
-    head.appendChild(el("div", "bs-label", isOk ? "Почему текст корректный" : "Что не так"));
-    if (c.type) head.appendChild(el("span", "bs-type", c.type));
+    var card = el("div", "explain-card");
+    var head = el("div", "explain-head");
+    head.appendChild(el("div", "explain-title", isOk ? "Почему текст корректный" : "Что не так"));
+    if (c.type) head.appendChild(el("span", "explain-cat", c.type));
     card.appendChild(head);
-    card.appendChild(el("p", "bs-text", isOk ? b.ok : b.problem));
+    card.appendChild(el("p", "explain-text", isOk ? b.ok : b.problem));
     frag.appendChild(card);
     return frag;
   }
