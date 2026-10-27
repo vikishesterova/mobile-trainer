@@ -644,13 +644,12 @@
     panel.appendChild(el("p", "intro-body",
       "Потренируйтесь замечать выдуманные факты, давление и неоднозначные обещания в сообщениях для клиентов. Сравнивайте текст с условиями продукта и проверяйте, что из него может понять клиент."));
 
-    // Три варианта оценки
+    // Три варианта оценки — раскрывающиеся блоки
     var evalBlock = el("div", "eval-block");
     evalBlock.appendChild(el("div", "intro-subhead", "Как оцениваем тексты"));
-    evalBlock.appendChild(el("p", "intro-caption", "В этом тренажере используем три варианта оценки."));
-    evalBlock.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта."));
-    evalBlock.appendChild(evalItem("Манипуляция или неоднозначная подача", "Текст давит на чувство вины или самооценку, показывает только одну сторону сравнения, намекает на неподтвержденный результат или дает обещание без важного уточнения. При этом неоднозначная формулировка сама по себе не доказывает намеренную манипуляцию."));
-    evalBlock.appendChild(evalItem("Корректное предложение", "Текст соответствует условиям продукта и позволяет понять важные ограничения. Реальные сроки, лимиты и остатки мест сами по себе не считаем дарк-паттернами."));
+    evalBlock.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта.", "dp"));
+    evalBlock.appendChild(evalItem("Манипуляция или неоднозначная подача", "Текст давит на чувство вины или самооценку, показывает только одну сторону сравнения, намекает на неподтвержденный результат или дает обещание без важного уточнения. При этом неоднозначная формулировка сама по себе не доказывает намеренную манипуляцию.", "man"));
+    evalBlock.appendChild(evalItem("Корректное предложение", "Текст соответствует условиям продукта и позволяет понять важные ограничения. Реальные сроки, лимиты и остатки мест сами по себе не считаем дарк-паттернами.", "ok"));
     panel.appendChild(evalBlock);
 
     // Как проходить
@@ -681,10 +680,25 @@
     render(wrap);
   }
 
-  function evalItem(title, text) {
-    var item = el("div", "eval-item");
-    item.appendChild(el("div", "eval-title", title));
-    item.appendChild(el("div", "eval-text", text));
+  function evalItem(title, text, kind) {
+    var item = el("div", "eval-item" + (kind ? " eval-" + kind : ""));
+    var head = el("button", "eval-head");
+    head.setAttribute("type", "button");
+    var titleEl = el("div", "eval-title", title);
+    var caret = el("span", "eval-caret", "▾");
+    head.appendChild(titleEl);
+    head.appendChild(caret);
+    var body = el("div", "eval-body");
+    var textEl = el("div", "eval-text", text);
+    body.appendChild(textEl);
+    body.style.display = "none";
+    item.appendChild(head);
+    item.appendChild(body);
+    head.addEventListener("click", function () {
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "block";
+      item.classList.toggle("open", !open);
+    });
     return item;
   }
 
