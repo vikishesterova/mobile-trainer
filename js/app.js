@@ -1018,7 +1018,31 @@
     // 3. разбор
     panel.appendChild(messageEvaluation(c));
 
-    // 4. кнопка перехода
+    // 4. кнопка «Посмотреть исправленный текст» — согласована с переключателем над телефоном
+    var hasExample = !!(c.breakdown && c.breakdown.example);
+    var viewMode = "source";
+    var viewBtn = null;
+
+    function setViewMode(m) {
+      viewMode = m;
+      renderAnswerPhone(phoneCol, c, m, setViewMode);
+      if (viewBtn) {
+        viewBtn.textContent = m === "fixed" ? "Показать исходный текст" : "Посмотреть исправленный текст";
+      }
+    }
+
+    if (hasExample) {
+      viewBtn = el("button", "btn-view", "Посмотреть исправленный текст");
+      viewBtn.setAttribute("type", "button");
+      viewBtn.addEventListener("click", function () {
+        var next = viewMode === "fixed" ? "source" : "fixed";
+        setViewMode(next);
+        if (next === "fixed") scrollPhoneIntoView(phoneCol);
+      });
+      panel.appendChild(viewBtn);
+    }
+
+    // 5. кнопка перехода
     var isLast = activeIndex() === activeCases().length - 1;
     var nextLabel;
     if (state.mode === "review") nextLabel = isLast ? "Показать итог повторения" : "Следующий кейс";
@@ -1036,19 +1060,25 @@
     panel.appendChild(nextWrap);
 
     // телефон: переключатель «Было/Стало» над ним, по умолчанию «Было»
-    renderAnswerPhone(phoneCol, c, "source");
+    renderAnswerPhone(phoneCol, c, "source", setViewMode);
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function scrollPhoneIntoView(phoneCol) {
+    if (!phoneCol) return;
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    phoneCol.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
   // телефон разбора: переключатель «Было/Стало» над ним + пример в том же формате
-  function renderAnswerPhone(phoneCol, c, mode) {
+  function renderAnswerPhone(phoneCol, c, mode, onToggle) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
     var hasExample = !!(c.breakdown && c.breakdown.example);
     if (hasExample) {
       phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
-        renderAnswerPhone(phoneCol, c, m);
+        if (onToggle) onToggle(m);
       }));
     }
     var showFixed = mode === "fixed";
@@ -1089,18 +1119,20 @@
     return b;
   }
 
-  // результат: спокойный статус + компактный список ответов
+  // результат: спокойный статус + блок ответов на нейтральной подложке
   function resultOfAnswer(correct, chosen, correctOpt) {
     var frag = document.createDocumentFragment();
     frag.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Неверно"));
+    var zone = el("div", "answers-zone");
     if (correct) {
-      frag.appendChild(el("div", "chosen-text", chosen.text));
+      zone.appendChild(el("div", "chosen-text", chosen.text));
     } else {
       var list = el("div", "answers-plain");
       list.appendChild(ansItem("Вы выбрали", chosen.text, "secondary"));
       list.appendChild(ansItem("Верный ответ", correctOpt.text, "primary"));
-      frag.appendChild(list);
+      zone.appendChild(list);
     }
+    frag.appendChild(zone);
     return frag;
   }
 

@@ -2284,44 +2284,63 @@ body {
 /* разбор: отступы между самостоятельными блоками */
 .panel-next { margin-top: 26px; }
 
-/* результат: спокойный статус + компактный список ответов */
+/* результат: спокойный статус + блок ответов на нейтральной подложке */
 .verdict-line {
   display: flex; align-items: center; gap: 9px;
-  font-size: 17px; font-weight: 800; color: #292633;
-  margin-bottom: 10px;
+  font-size: 18px; font-weight: 800; color: #292633;
+  margin-bottom: 12px;
 }
 .verdict-line::before {
-  content: ""; width: 9px; height: 9px; border-radius: 50%;
+  content: ""; width: 10px; height: 10px; border-radius: 50%;
 }
 .vd-correct::before { background: #557963; }
 .vd-wrong::before { background: #95616D; }
+.answers-zone {
+  background: #f7f6fa;
+  border: 1px solid #e6e0f2;
+  border-radius: 14px;
+  padding: 4px 16px;
+  margin-bottom: 18px;
+}
 .chosen-text {
   font-size: 15px; color: #292633; line-height: 1.5;
-  padding-bottom: 4px;
+  padding: 12px 0;
 }
 .answers-plain { display: flex; flex-direction: column; }
 .ans-row { padding: 12px 0; }
-.ans-row + .ans-row { border-top: 1px solid #eee8f8; }
-.ans-caption { font-size: 12px; font-weight: 700; color: #686273; margin-bottom: 4px; }
+.ans-row + .ans-row { border-top: 1px solid #e6e0f2; }
+.ans-caption { font-size: 12px; font-weight: 600; color: #7a738a; margin-bottom: 4px; }
 .ans-text { font-size: 15px; line-height: 1.5; }
 .ans-row.secondary .ans-text { color: #6b6470; font-weight: 400; }
 .ans-row.primary .ans-text { color: #292633; font-weight: 600; }
 
-/* разбор: «Что не так» / «Почему текст корректный» — белый блок */
+/* кнопка «Посмотреть исправленный текст» (вторичное действие) */
+.btn-view {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 18px; width: 100%;
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  color: #7151ad; background: #ffffff;
+  border: 1.5px solid #7151ad; border-radius: 12px;
+  padding: 12px 16px; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-view:hover { background: #f3eef9; }
+
+/* разбор: «Что не так» / «Почему текст корректный» — мягкая сиреневая подложка */
 .explain-card {
-  background: #ffffff;
-  border: 1px solid #ded6e9;
+  background: #f6f3fc;
+  border: 1px solid #e4dcf6;
   border-radius: 14px;
   padding: 16px 18px;
 }
 .explain-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  border-bottom: 1px solid #eee8f8;
+  border-bottom: 1px solid #e4dcf6;
   padding-bottom: 10px; margin-bottom: 12px;
 }
-.explain-title { font-size: 16px; font-weight: 800; color: #292633; }
-.explain-cat { font-size: 12px; font-weight: 700; color: #686273; }
-.explain-text { font-size: 15px; color: #3a3642; line-height: 1.55; margin: 0; }
+.explain-title { font-size: 16px; font-weight: 700; color: #292633; }
+.explain-cat { font-size: 12px; font-weight: 700; color: #8a82a3; }
+.explain-text { font-size: 15px; color: #3a3642; line-height: 1.5; margin: 0; }
 
 /* мягкая мятная подсветка изменённых фрагментов в «Стало» */
 .hl-mint {
