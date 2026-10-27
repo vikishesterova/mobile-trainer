@@ -2288,9 +2288,13 @@ body {
 .panel-next { margin-top: 26px; }
 
 /* оценка сообщения: категория отдельно от результата пользователя */
+.eval-section-title {
+  font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+  color: #7151ad; margin: 14px 0 6px;
+}
 .eval-message {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin: 2px 0 12px;
+  margin: 0 0 12px;
 }
 .eval-message-label { font-size: 16px; font-weight: 800; color: #292633; }
 .eval-message-type {
@@ -2301,17 +2305,36 @@ body {
 }
 .eval-message + .bs-card { margin-top: 0; }
 
-/* блок «Как можно исправить» — отдельная мятная подложка */
-.fix-block {
-  background: #eaf7ef;
-  border: 1px solid #c4e3d2;
-  border-radius: 16px;
-  padding: 18px;
-  margin-top: 20px;
+/* результат пользователя — подпись «Ваш ответ» */
+.answer-result { margin-bottom: 18px; }
+.answer-result-label {
+  font-size: 12px; font-weight: 700; color: #686273;
+  margin-bottom: 8px;
 }
-.fix-title { font-size: 16px; font-weight: 800; color: #14351f; margin: 0 0 8px; }
-.fix-note { font-size: 15px; color: #1d3a27; line-height: 1.55; margin: 0 0 12px; }
-.fix-block .ex-preview { margin-top: 0; }
+.answer-result .result-plaque,
+.answer-result .answers-compact { margin-bottom: 0; }
+
+/* вторичная кнопка «Посмотреть исправленный текст» */
+.btn-view {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 18px; width: 100%;
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  color: #7151ad; background: #ffffff;
+  border: 1.5px solid #7151ad; border-radius: 12px;
+  padding: 12px 16px; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.btn-view:hover { background: #f3eef9; }
+.btn-view[hidden] { display: none; }
+
+/* мягкая мятная подсветка изменённых фрагментов в «Стало» */
+.hl-mint {
+  background: #c9efd9;
+  color: #14351f;
+  border-radius: 4px;
+  padding: 0 2px;
+  box-shadow: 0 0 0 1px rgba(46, 133, 86, 0.25);
+}
 
 /* исправленный пример: подпись формата и кнопка (сохраняем структуру сообщения) */
 .ex-format {

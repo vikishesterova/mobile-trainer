@@ -1006,9 +1006,17 @@
     var correctOpt = null;
     c.options.forEach(function (o) { if (o.isCorrect) correctOpt = o; });
     var correct = chosen.isCorrect;
+    var hasExample = !!(c.breakdown && c.breakdown.example);
 
-    // телефон + переключатель «Было / Стало» непосредственно под ним
-    renderAnswerPhone(phoneCol, c, "source");
+    // единое состояние версии телефона для переключателя и кнопки
+    var viewMode = "source";
+    var viewBtn = null;
+
+    function setViewMode(m) {
+      viewMode = m;
+      renderAnswerPhone(phoneCol, c, m, setViewMode);
+      if (viewBtn) viewBtn.hidden = (m === "fixed");
+    }
 
     // 1. навигация и прогресс
     panel.appendChild(buildTopNav());
@@ -1017,12 +1025,19 @@
     // 2. результат ответа пользователя
     panel.appendChild(resultOfAnswer(correct, chosen, correctOpt));
 
-    // 3. оценка самого сообщения (всегда после ответа)
+    // 3. разбор исходного текста (категория + объяснение)
+    panel.appendChild(el("div", "eval-section-title", "Разбор исходного текста"));
     panel.appendChild(messageEvaluation(c));
 
-    // 4. «Как можно исправить» — только для проблемных кейсов с готовым примером
-    if (c.breakdown && !c.breakdown.ok && c.breakdown.example) {
-      panel.appendChild(fixBlock(c));
+    // 4. вторичная кнопка — переключить телефон на «Стало»
+    if (hasExample) {
+      viewBtn = el("button", "btn-view", "Посмотреть исправленный текст");
+      viewBtn.setAttribute("type", "button");
+      viewBtn.addEventListener("click", function () {
+        setViewMode("fixed");
+        scrollPhoneIntoView(phoneCol);
+      });
+      panel.appendChild(viewBtn);
     }
 
     // 5. кнопка перехода
@@ -1042,34 +1057,48 @@
     nextWrap.appendChild(next);
     panel.appendChild(nextWrap);
 
+    // телефон: переключатель над ним, по умолчанию «Было»
+    renderAnswerPhone(phoneCol, c, "source", setViewMode);
+
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // телефон разбора: исходный или исправленный пример + переключатель под ним
-  function renderAnswerPhone(phoneCol, c, mode) {
+  function scrollPhoneIntoView(phoneCol) {
+    if (!phoneCol) return;
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    phoneCol.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
+  // телефон разбора: переключатель «Было/Стало» над ним + пример в том же формате
+  function renderAnswerPhone(phoneCol, c, mode, onToggle) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
-    var showFixed = mode === "fixed";
-    var sd = (showFixed && c.breakdown && c.breakdown.example) ? c.breakdown.example : c.screen;
-    var fmt = sd.format || c.screen.format || "landing";
-    var frame = caseFrame(sd);
-    if (!showFixed) applyHighlight(frame, c.screen && c.screen.highlight);
-    phoneCol.appendChild(frame);
-    if (c.breakdown && c.breakdown.example) {
-      phoneCol.appendChild(buildSourceToggle(c, function (m) {
-        renderAnswerPhone(phoneCol, c, m);
+    var hasExample = !!(c.breakdown && c.breakdown.example);
+    if (hasExample) {
+      phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
+        if (onToggle) onToggle(m);
       }));
     }
+    var showFixed = mode === "fixed";
+    var sd = showFixed ? c.breakdown.example : c.screen;
+    var fmt = sd.format || c.screen.format || "landing";
+    var frame = caseFrame(sd);
+    if (showFixed) {
+      applyHighlight(frame, sd.highlight, "hl-mint");
+    } else {
+      applyHighlight(frame, c.screen && c.screen.highlight, "hl");
+    }
+    phoneCol.appendChild(frame);
   }
 
   // переключатель «Было / Стало» — только если есть исправленный пример
-  function buildSourceToggle(c, onToggle) {
+  function buildSourceToggle(c, activeMode, onToggle) {
     var bar = el("div", "src-toggle");
     if (!(c.breakdown && c.breakdown.example)) return bar;
     bar.setAttribute("role", "group");
     bar.setAttribute("aria-label", "Сравнить исходное и исправленное сообщение");
-    bar.appendChild(toggleSeg("Было", "source", true, onToggle));
-    bar.appendChild(toggleSeg("Стало", "fixed", false, onToggle));
+    bar.appendChild(toggleSeg("Было", "source", activeMode !== "fixed", onToggle));
+    bar.appendChild(toggleSeg("Стало", "fixed", activeMode === "fixed", onToggle));
     return bar;
   }
 
@@ -1091,9 +1120,11 @@
     return b;
   }
 
-  // результат ответа пользователя (не смешиваем с оценкой сообщения)
+  // результат ответа пользователя — подпись «Ваш ответ», чтобы не путать с оценкой текста
   function resultOfAnswer(correct, chosen, correctOpt) {
     var frag = document.createDocumentFragment();
+    var box = el("div", "answer-result");
+    box.appendChild(el("div", "answer-result-label", "Ваш ответ"));
     if (correct) {
       var res = el("div", "result-plaque rp-correct");
       var rHead = el("div", "result-head");
@@ -1103,14 +1134,15 @@
       var resBody = el("div", "result-body");
       resBody.appendChild(el("div", "result-body-text", chosen.text));
       res.appendChild(resBody);
-      frag.appendChild(res);
+      box.appendChild(res);
     } else {
-      frag.appendChild(el("div", "result-status", "Не совсем"));
+      box.appendChild(el("div", "result-status", "Не совсем"));
       var answersWrap = el("div", "answers-block answers-compact");
       answersWrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
       answersWrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
-      frag.appendChild(answersWrap);
+      box.appendChild(answersWrap);
     }
+    frag.appendChild(box);
     return frag;
   }
 
@@ -1145,16 +1177,6 @@
     return frag;
   }
 
-  // отдельный цветной блок «Как можно исправить» с готовым примером в формате
-  function fixBlock(c) {
-    var b = c.breakdown;
-    var wrap = el("div", "fix-block");
-    wrap.appendChild(el("div", "fix-title", "Как можно исправить"));
-    if (b.fix) wrap.appendChild(el("p", "fix-note", b.fix));
-    wrap.appendChild(buildExamplePreview(b.example));
-    return wrap;
-  }
-
   // финал тренировки: фиксируем результат и сохраняем прогресс
   function finishTraining() {
     state.mode = "training";
@@ -1179,7 +1201,7 @@
   function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
-  function applyHighlight(root, phrase) {
+  function applyHighlight(root, phrase, cls) {
     if (!root || !phrase) return;
     var parts = String(phrase).split(/\s+/).map(escapeRegExp);
     var re = new RegExp(parts.join("\\s+"), "i");
@@ -1189,7 +1211,7 @@
       var m = n.nodeValue.match(re);
       if (m && m.index >= 0) {
         var mark = document.createElement("mark");
-        mark.className = "hl";
+        mark.className = cls || "hl";
         mark.textContent = m[0];
         var before = document.createTextNode(n.nodeValue.slice(0, m.index));
         n.nodeValue = n.nodeValue.slice(m.index + m[0].length);
