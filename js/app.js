@@ -640,24 +640,32 @@
 
     // Правая колонка: вводная
     var panel = el("div", "panel");
-    panel.appendChild(el("div", "intro-eyebrow", "Для продуктовых редакторов"));
     panel.appendChild(el("h1", "intro-heading", "Дарк-паттерны в тексте"));
     panel.appendChild(el("p", "intro-body",
-      "Иногда предложение выглядит убедительно, но скрывает важное условие или обещает больше, чем получит клиент. Потренируйтесь замечать такие приемы на примерах из разных продуктов."));
+      "Потренируйтесь замечать выдуманные факты, давление и неоднозначные обещания в сообщениях для клиентов. Сравнивайте текст с условиями продукта и проверяйте, что из него может понять клиент."));
 
-    var howBlock = el("div", "how-block");
-    howBlock.appendChild(el("div", "intro-subhead", "Как устроен тренажер"));
-    var howList = el("div", "how-list");
-    howList.appendChild(howRow("doc", "Смотрим на предложение", "В телефоне — текст для клиента, рядом — условия и вопрос задания. Сравните обещания с тем, что клиент получит на самом деле."));
-    howList.appendChild(howRow("pick", "Выбираем ответ", "В каждом задании один правильный ответ. В одних текстах есть дарк-паттерны, а в других все в порядке."));
-    howList.appendChild(howRow("com", "Разбираем текст", "После ответа объясним, что в предложении стоит изменить и почему. Для корректных текстов покажем, как обещание соответствует условиям."));
-    howBlock.appendChild(howList);
-    panel.appendChild(howBlock);
+    // Три варианта оценки
+    var evalBlock = el("div", "eval-block");
+    evalBlock.appendChild(el("div", "intro-subhead", "Как оцениваем тексты"));
+    evalBlock.appendChild(el("p", "intro-caption", "В этом тренажере используем три варианта оценки."));
+    evalBlock.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта."));
+    evalBlock.appendChild(evalItem("Манипуляция или неоднозначная подача", "Текст давит на чувство вины или самооценку, показывает только одну сторону сравнения, намекает на неподтвержденный результат или дает обещание без важного уточнения. При этом неоднозначная формулировка сама по себе не доказывает намеренную манипуляцию."));
+    evalBlock.appendChild(evalItem("Корректное предложение", "Текст соответствует условиям продукта и позволяет понять важные ограничения. Реальные сроки, лимиты и остатки мест сами по себе не считаем дарк-паттернами."));
+    panel.appendChild(evalBlock);
 
-    panel.appendChild(el("div", "intro-note", "Все продукты и ситуации в заданиях учебные."));
+    // Как проходить
+    var passBlock = el("div", "pass-block");
+    passBlock.appendChild(el("div", "intro-subhead", "Как проходить тренажер"));
+    var passList = el("div", "pass-list");
+    passList.appendChild(passRow("doc", "Прочитайте сообщение для клиента, изучите условия продукта и ответьте на вопрос к примеру."));
+    passList.appendChild(passRow("pick", "После выбора ответа покажем оценку и разбор. Если в тексте есть проблема, назовем ее и покажем, как исправить сообщение. Если предложение корректное, поясним почему."));
+    passBlock.appendChild(passList);
+    panel.appendChild(passBlock);
+
+    panel.appendChild(el("div", "intro-note", "Все ситуации учебные, а тексты и оформление условные."));
 
     var actions = el("div", "panel-actions");
-    var goBtn = el("button", "btn btn-primary", "Начать");
+    var goBtn = el("button", "btn btn-primary", "Начать тренировку");
     goBtn.addEventListener("click", function () {
       state.index = 0;
       state.answers = [];
@@ -671,6 +679,22 @@
 
     wrap.appendChild(panel);
     render(wrap);
+  }
+
+  function evalItem(title, text) {
+    var item = el("div", "eval-item");
+    item.appendChild(el("div", "eval-title", title));
+    item.appendChild(el("div", "eval-text", text));
+    return item;
+  }
+
+  function passRow(icon, text) {
+    var row = el("div", "pass-row");
+    var ic = el("span", "pass-ico");
+    ic.innerHTML = ICONS[icon];
+    row.appendChild(ic);
+    row.appendChild(el("div", "pass-text", text));
+    return row;
   }
 
   function coverCard(label, cls) {
@@ -692,18 +716,6 @@
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>',
     pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>'
   };
-
-  function howRow(icon, title, text) {
-    var row = el("div", "how-row");
-    var ic = el("span", "how-ico");
-    ic.innerHTML = ICONS[icon];
-    row.appendChild(ic);
-    var body = el("div", "how-row-body");
-    body.appendChild(el("div", "how-row-title", title));
-    body.appendChild(el("div", "how-row-text", text));
-    row.appendChild(body);
-    return row;
-  }
 
   function reviewItem(title, hint) {
     var item = el("div", "review-item");
