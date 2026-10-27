@@ -1976,13 +1976,43 @@ body {
   background: #eaf2fc;
   border: 1px solid #dbe7f7;
   border-radius: 16px;
-  padding: 18px 18px 16px;
+  padding: 28px;
   margin-bottom: 22px;
 }
-.intro-steps-title { font-size: 17px; font-weight: 600; color: #292633; margin-bottom: 12px; }
-.intro-step { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: #4b5263; line-height: 1.55; font-weight: 400; margin-bottom: 10px; }
+.intro-steps-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #cfddf0;
+}
+.intro-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 15px;
+  color: #000;
+  line-height: 1.5;
+  font-weight: 400;
+  margin-top: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #cfddf0;
+}
 .intro-step:last-child { margin-bottom: 0; }
-.intro-step-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: #dbe9fb; color: #33619e; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; margin-top: 3px; }
+.intro-step-num {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #dbe9fb;
+  color: #33619e;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .intro-step-text { flex: 1; }
 
 /* --- Заметка без подложки --- */
