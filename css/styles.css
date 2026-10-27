@@ -2242,3 +2242,81 @@ body {
   .results-actions { flex-direction: column; }
   .results-actions .btn { width: 100%; flex: none; }
 }
+
+/* ============================================================================
+   Сохранение прогресса, разбор, повторение ошибок
+   ============================================================================ */
+
+/* контейнер телефона в квизе */
+.case-phone { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+/* подсветка проблемной фразы после ответа */
+.hl {
+  background: #ffe9a8;
+  color: #292633;
+  border-radius: 4px;
+  padding: 0 2px;
+  box-shadow: 0 0 0 1px rgba(198, 138, 20, 0.35);
+}
+
+/* переключатель «Исходный / Исправленный» */
+.src-toggle {
+  display: flex; gap: 6px;
+  background: #f3eef9;
+  border: 1px solid #ded6e9;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+.seg {
+  flex: 1 1 0; min-width: 0;
+  border: none; border-radius: 9px; cursor: pointer;
+  background: transparent; color: #686273;
+  font-family: var(--font); font-size: 14px; font-weight: 600;
+  padding: 9px 12px;
+  transition: background .15s ease, color .15s ease;
+}
+.seg:hover { color: #292633; }
+.seg-active { background: #ffffff; color: #7151ad; box-shadow: 0 1px 4px rgba(41, 38, 51, 0.12); }
+
+/* компактный разбор */
+.answers-compact { gap: 10px; margin-bottom: 16px; }
+.cause-card { padding: 16px 18px; }
+.main-thought { padding: 16px 18px; margin-top: 14px; }
+
+/* «Подробнее» — сворачиваемый разбор */
+.detail { margin: 18px 0 22px; }
+.detail-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%;
+  background: #f3eef9; border: 1px solid #ded6e9; border-radius: 12px;
+  cursor: pointer; font-family: var(--font); text-align: left;
+  padding: 13px 16px;
+}
+.detail-title { font-size: 16px; font-weight: 700; color: #292633; }
+.detail-caret { color: #7151ad; font-size: 14px; transition: transform .2s ease; }
+.detail.open .detail-caret { transform: rotate(180deg); }
+.detail-body { padding-top: 14px; }
+
+/* предупреждение о несовместимом прогрессе */
+.intro-warn {
+  background: #fdecee; border: 1px solid #e8a8b0; border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 16px;
+}
+.intro-warn-text { margin: 0; font-size: 14px; color: #8a2f36; line-height: 1.5; }
+
+/* видимый фокус для клавиатуры */
+a:focus-visible, button:focus-visible, .option:focus-visible,
+.seg:focus-visible, .eval-head:focus-visible, .detail-head:focus-visible,
+.mistake-head:focus-visible, textarea:focus-visible, input:focus-visible {
+  outline: 3px solid #7151ad;
+  outline-offset: 2px;
+}
+
+/* мобильный экран: пример и задание друг под другом, без горизонтальной прокрутки */
+@media (max-width: 860px) {
+  .case-phone { width: 100%; }
+}
+@media (max-width: 400px) {
+  .src-toggle { flex-direction: column; }
+}

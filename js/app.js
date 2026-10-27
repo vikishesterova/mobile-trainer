@@ -8,9 +8,15 @@
   var app = document.getElementById("app");
 
   var state = {
-    index: 0,
-    answers: [],
-    currentSelected: -1,
+    mode: "training",          // "training" | "review"
+    index: 0,                  // индекс текущего кейса в активном проходе
+    answers: [],               // ответы основного (тренировочного) прохода
+    currentSelected: -1,       // выбранный вариант текущего кейса
+    answeredCurrent: false,    // отвечен ли текущий кейс (для восстановления после перезагрузки)
+    finishedResult: null,      // { correct, total, pct } завершённой тренировки
+    reviewCases: [],           // кейсы для повторения ошибок
+    reviewIndex: 0,
+    reviewAnswers: [],
     survey: null,
   };
 
@@ -59,6 +65,100 @@
 
   function correctCount() {
     return state.answers.filter(function (a) { return a.correct; }).length;
+  }
+
+  // ============================================================================
+  // Сохранение прогресса в текущем браузере (localStorage)
+  // ============================================================================
+  var PROGRESS_KEY = "dark-patterns-progress-v1";
+
+  // активный список кейсов/индекс/ответы — по режиму (тренировка или повторение)
+  function activeCases() { return state.mode === "review" ? state.reviewCases : CASES; }
+  function activeIndex() { return state.mode === "review" ? state.reviewIndex : state.index; }
+  function setActiveIndex(i) {
+    if (state.mode === "review") state.reviewIndex = i; else state.index = i;
+  }
+  function activeAnswers() { return state.mode === "review" ? state.reviewAnswers : state.answers; }
+  function currentCase() { return activeCases()[activeIndex()]; }
+
+  // сброс состояния к новому запуску
+  function resetState() {
+    state.mode = "training";
+    state.index = 0;
+    state.answers = [];
+    state.currentSelected = -1;
+    state.answeredCurrent = false;
+    state.finishedResult = null;
+    state.reviewCases = [];
+    state.reviewIndex = 0;
+    state.reviewAnswers = [];
+  }
+
+  function hasProgress() {
+    try { return !!window.localStorage.getItem(PROGRESS_KEY); } catch (e) { return false; }
+  }
+
+  function saveProgress() {
+    try {
+      window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+        version: 1,
+        ids: CASES.map(function (c) { return c.id; }),
+        index: state.index,
+        answers: state.answers,
+        answeredCurrent: state.answeredCurrent,
+        finishedResult: state.finishedResult
+      }));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function clearProgress() {
+    try { window.localStorage.removeItem(PROGRESS_KEY); } catch (e) {}
+  }
+
+  // Возвращает status: 0 — нет сохранённого прогресса; 1 — совместим и восстановлен;
+  // 2 — сохранение несовместимо с текущим набором кейсов (контент обновился).
+  function restoreProgress() {
+    var data;
+    try { data = JSON.parse(window.localStorage.getItem(PROGRESS_KEY)); }
+    catch (e) { return { status: 0 }; }
+    if (!data || data.version !== 1) return { status: 0 };
+
+    var currentIds = CASES.map(function (c) { return c.id; }).join(",");
+    var savedIds = (data.ids || []).join(",");
+    if (savedIds !== currentIds) return { status: 2 };
+
+    if (!Array.isArray(data.answers)) return { status: 0 };
+
+    state.mode = "training";
+    state.index = Math.min(Math.max(0, data.index | 0), CASES.length);
+    state.answers = data.answers.filter(function (a) {
+      return a && typeof a.caseId === "number" && a.caseId >= 0 &&
+        CASES.some(function (c) { return c.id === a.caseId; });
+    });
+    state.answeredCurrent = !!data.answeredCurrent && state.answers.length > 0;
+    state.currentSelected = state.answeredCurrent
+      ? state.answers[state.answers.length - 1].selectedIndex
+      : -1;
+    state.finishedResult = data.finishedResult || null;
+    return { status: 1 };
+  }
+
+  // новая тренировка: при наличии сохранённых ответов — запрашиваем подтверждение
+  function startFresh() {
+    if (hasProgress() && !window.confirm("Начать заново? Сохранённый прогресс и ответы будут удалены.")) {
+      return;
+    }
+    resetState();
+    clearProgress();
+    track("start");
+    renderQuiz();
+  }
+
+  function goHome() {
+    saveProgress();
+    track("go_home");
+    renderIntro();
   }
 
   // ============================================================================
@@ -667,21 +767,60 @@
     // Подпись, счётчик, кнопка
     panel.appendChild(el("div", "intro-note", "Тексты и интерфейсы в заданиях условные"));
 
-    var actions = el("div", "panel-actions");
-    var goBtn = el("button", "btn btn-primary", "Начать тренировку");
-    goBtn.addEventListener("click", function () {
-      state.index = 0;
-      state.answers = [];
-      state.currentSelected = -1;
-      track("start");
-      renderQuiz();
-    });
-    actions.appendChild(goBtn);
-    panel.appendChild(actions);
-    panel.appendChild(el("div", "intro-count", CASES.length + " заданий"));
+    // действия — зависят от сохранённого прогресса
+    renderIntroActions(panel);
 
     wrap.appendChild(panel);
     render(wrap);
+  }
+
+  function renderIntroActions(panel) {
+    var actions = el("div", "panel-actions");
+    var prog = restoreProgress();
+
+    if (prog.status === 2) {
+      // контент обновился — сохранение несовместимо
+      var note = el("div", "intro-warn");
+      note.appendChild(el("p", "intro-warn-text", "Контент тренажера обновился. Сохранённый прогресс несовместим — начните заново."));
+      panel.appendChild(note);
+      actions.appendChild(btnPrimary("Начать заново", startFresh));
+      panel.appendChild(actions);
+      return;
+    }
+
+    if (prog.status === 1 && state.finishedResult) {
+      // завершённая тренировка — возврат к результатам
+      actions.appendChild(btnPrimary("К результатам", renderResults));
+      actions.appendChild(btnGhost("Начать заново", startFresh));
+      panel.appendChild(actions);
+      panel.appendChild(el("div", "intro-count", "Результат: " + state.finishedResult.correct + " из " + state.finishedResult.total));
+      return;
+    }
+
+    if (prog.status === 1) {
+      // незавершённая тренировка — продолжить
+      actions.appendChild(btnPrimary("Продолжить", continueTraining));
+      actions.appendChild(btnGhost("Начать заново", startFresh));
+      panel.appendChild(actions);
+      panel.appendChild(el("div", "intro-count", "Выполнено " + state.answers.length + " из " + CASES.length));
+      return;
+    }
+
+    // новый старт
+    actions.appendChild(btnPrimary("Начать тренировку", startFresh));
+    panel.appendChild(actions);
+    panel.appendChild(el("div", "intro-count", CASES.length + " заданий"));
+  }
+
+  function btnPrimary(label, handler) {
+    var b = el("button", "btn btn-primary", label);
+    b.addEventListener("click", handler);
+    return b;
+  }
+  function btnGhost(label, handler) {
+    var b = el("button", "btn btn-ghost", label);
+    b.addEventListener("click", handler);
+    return b;
   }
 
   function introStep(num, text) {
@@ -763,25 +902,19 @@
   // 2. Квиз
   // ============================================================================
 
-  // вернуться на стартовый экран
-  function goHome() {
-    state.index = 0;
-    state.answers = [];
-    state.currentSelected = -1;
-    track("go_home");
-    renderIntro();
-  }
-
   // верхняя навигация: «На главную» и «← Назад» (если есть предыдущий кейс)
   function buildTopNav() {
     var row = el("div", "quiz-nav");
-    if (state.index > 0) {
+    if (activeIndex() > 0) {
       var back = el("button", "btn-nav", "← Назад");
       back.addEventListener("click", function () {
-        state.index -= 1;
+        var i = activeIndex();
+        var prev = activeCases()[i - 1];
+        setActiveIndex(i - 1);
         state.currentSelected = -1;
-        var cid = CASES[state.index].id;
-        state.answers = state.answers.filter(function (a) { return a.caseId !== cid; });
+        state.answeredCurrent = false;
+        dropAnswerForCase(prev.id);
+        if (state.mode === "training") saveProgress();
         renderQuiz();
       });
       row.appendChild(back);
@@ -792,29 +925,37 @@
     return row;
   }
 
+  function dropAnswerForCase(caseId) {
+    if (state.mode === "review") {
+      state.reviewAnswers = state.reviewAnswers.filter(function (a) { return a.caseId !== caseId; });
+    } else {
+      state.answers = state.answers.filter(function (a) { return a.caseId !== caseId; });
+    }
+  }
+
   function renderQuiz() {
-    if (state.index >= CASES.length) {
-      renderResults();
+    var cases = activeCases();
+    var idx = activeIndex();
+    if (idx >= cases.length) {
+      if (state.mode === "review") { renderReviewResult(); }
+      else { finishTraining(); }
       return;
     }
 
-    track("case_view", { index: state.index + 1 });
-    var c = CASES[state.index];
+    track("case_view", { index: idx + 1, mode: state.mode });
+    var c = cases[idx];
     var wrap = el("div", "screen layout");
 
     // телефон с предложением
-    wrap.appendChild(caseFrame(c.screen));
+    var phoneCol = el("div", "case-phone");
+    phoneCol.appendChild(caseFrame(c.screen));
+    wrap.appendChild(phoneCol);
 
     // панель с заданием
     var panel = el("div", "panel");
-
-    // кнопки навигации
     panel.appendChild(buildTopNav());
+    panel.appendChild(buildProgress(idx, cases.length, state.mode === "review"));
 
-    // прогресс (номер кейса + полоса)
-    panel.appendChild(buildProgress(state.index, CASES.length));
-
-    // условия задания (контекст для редактора) — перед вопросом
     if (c.context) {
       var ctx = el("div", "case-context");
       ctx.appendChild(el("div", "case-context-label", "Условия задания"));
@@ -822,10 +963,8 @@
       panel.appendChild(ctx);
     }
 
-    // вопрос
     panel.appendChild(el("h3", "panel-question", c.question || DEFAULT_QUESTION));
 
-    // варианты
     var optionsWrap = el("div", "options");
     c.options.forEach(function (opt, i) {
       var label = el("button", "option");
@@ -846,66 +985,58 @@
 
   function selectOption(c, idx) {
     state.currentSelected = idx;
-    state.answers.push({ caseId: c.id, selectedIndex: idx, correct: c.options[idx].isCorrect });
-    track(c.options[idx].isCorrect ? "answer_correct" : "answer_wrong", { caseId: c.id, index: state.index + 1 });
+    state.answeredCurrent = true;
+    var arr = activeAnswers();
+    arr.push({ caseId: c.id, selectedIndex: idx, correct: c.options[idx].isCorrect });
+    if (state.mode === "review") state.reviewAnswers = arr; else state.answers = arr;
+    if (state.mode === "training") saveProgress();
+    track(c.options[idx].isCorrect ? "answer_correct" : "answer_wrong",
+      { caseId: c.id, index: activeIndex() + 1, mode: state.mode });
     renderAnswerView(c, idx);
   }
 
   // Экран разбора после ответа (заменяет правую панель)
   function renderAnswerView(c, idx) {
     var panel = document.querySelector(".panel");
+    var phoneCol = document.querySelector(".case-phone");
     if (!panel) { renderQuiz(); return; }
     panel.innerHTML = "";
 
     var chosen = c.options[idx];
     var correctOpt = null;
     c.options.forEach(function (o) { if (o.isCorrect) correctOpt = o; });
-
-    // кнопки навигации
-    panel.appendChild(buildTopNav());
-
-    // прогресс (номер кейса + полоса)
-    panel.appendChild(buildProgress(state.index, CASES.length));
-
-    // результат — компактная плашка
     var correct = chosen.isCorrect;
 
-    function answerPlaque(label, text, kind) {
-      var p = el("div", "answer-plaque " + (kind === "wrong" ? "ap-wrong" : "ap-right"));
-      p.appendChild(el("div", "answer-plaque-label", label));
-      p.appendChild(el("div", "answer-plaque-text", text));
-      return p;
+    // телефон: исходная версия (с подсветкой) + переключатель на исправленную
+    renderAnswerPhone(phoneCol, c, "source");
+    if (c.breakdown && c.breakdown.example) {
+      panel.appendChild(buildSourceToggle(c, function (mode) {
+        renderAnswerPhone(phoneCol, c, mode);
+      }));
     }
+
+    panel.appendChild(buildTopNav());
+    panel.appendChild(buildProgress(activeIndex(), activeCases().length, state.mode === "review"));
 
     if (correct) {
-      // верный ответ — одна зелёная плашка (как раньше)
-      var res = el("div", "result-plaque rp-correct");
-      var rHead = el("div", "result-head");
-      rHead.appendChild(el("span", "result-ico", "✓"));
-      rHead.appendChild(el("div", "result-title", "Верно"));
-      res.appendChild(rHead);
-      var resBody = el("div", "result-body");
-      resBody.appendChild(el("div", "result-body-text", chosen.text));
-      res.appendChild(resBody);
-      panel.appendChild(res);
+      panel.appendChild(correctPlaque(chosen.text, c));
     } else {
-      // неверный ответ — короткий статус + две отдельные плашки
       panel.appendChild(el("div", "result-status", "Не совсем"));
-
-      var answersWrap = el("div", "answers-block");
-      answersWrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
-      answersWrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
-      panel.appendChild(answersWrap);
+      panel.appendChild(compactAnswers(chosen, correctOpt));
+      panel.appendChild(causeCard(c));
+      panel.appendChild(detailDisclosure(c));
     }
 
-    // разбор — плашки
-    panel.appendChild(buildBreakdown(c));
-
-    // кнопка «Следующий кейс»
-    var next = el("button", "btn btn-primary", state.index === CASES.length - 1 ? "Показать результаты" : "Следующий кейс");
+    var isLast = activeIndex() === activeCases().length - 1;
+    var nextLabel;
+    if (state.mode === "review") nextLabel = isLast ? "Показать итог повторения" : "Следующий кейс";
+    else nextLabel = isLast ? "Показать результаты" : "Следующий кейс";
+    var next = el("button", "btn btn-primary", nextLabel);
     next.addEventListener("click", function () {
-      state.index += 1;
+      setActiveIndex(activeIndex() + 1);
       state.currentSelected = -1;
+      state.answeredCurrent = false;
+      if (state.mode === "training") saveProgress();
       renderQuiz();
     });
     panel.appendChild(next);
@@ -913,10 +1044,178 @@
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function buildProgress(index, total) {
+  // телефон разбора: исходный или исправленный пример в том же формате
+  function renderAnswerPhone(phoneCol, c, mode) {
+    if (!phoneCol) return;
+    phoneCol.innerHTML = "";
+    var showFixed = mode === "fixed";
+    var sd = (showFixed && c.breakdown && c.breakdown.example) ? c.breakdown.example : c.screen;
+    var fmt = sd.format || c.screen.format || "landing";
+    var frame = caseFrame(sd);
+    if (!showFixed) applyHighlight(frame, c.screen && c.screen.highlight);
+    phoneCol.appendChild(frame);
+  }
+
+  // переключатель «Исходный / Исправленный» — только если есть исправленный пример
+  function buildSourceToggle(c, onToggle) {
+    var bar = el("div", "src-toggle");
+    if (!(c.breakdown && c.breakdown.example)) return bar;
+    bar.setAttribute("role", "group");
+    bar.setAttribute("aria-label", "Показать версию примера");
+    bar.appendChild(toggleSeg("Исходный", "source", true, onToggle));
+    bar.appendChild(toggleSeg("Исправленный", "fixed", false, onToggle));
+    return bar;
+  }
+
+  function toggleSeg(label, mode, active, onToggle) {
+    var b = el("button", "seg" + (active ? " seg-active" : ""));
+    b.setAttribute("type", "button");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", active ? "true" : "false");
+    b.addEventListener("click", function () {
+      var segs = b.parentNode.querySelectorAll(".seg");
+      segs.forEach(function (s) {
+        s.classList.remove("seg-active");
+        s.setAttribute("aria-pressed", "false");
+      });
+      b.classList.add("seg-active");
+      b.setAttribute("aria-pressed", "true");
+      onToggle(mode);
+    });
+    return b;
+  }
+
+  function correctPlaque(chosenText, c) {
+    var frag = document.createDocumentFragment();
+    var res = el("div", "result-plaque rp-correct");
+    var rHead = el("div", "result-head");
+    rHead.appendChild(el("span", "result-ico", "✓"));
+    rHead.appendChild(el("div", "result-title", "Верно"));
+    res.appendChild(rHead);
+    var resBody = el("div", "result-body");
+    resBody.appendChild(el("div", "result-body-text", chosenText));
+    res.appendChild(resBody);
+    frag.appendChild(res);
+    if (c.breakdown && c.breakdown.ok) {
+      var card = el("div", "bs-card bs-green main-thought");
+      card.appendChild(el("div", "bs-label", "Почему текст можно оставить"));
+      card.appendChild(el("p", "bs-text", c.breakdown.ok));
+      frag.appendChild(card);
+    }
+    return frag;
+  }
+
+  function answerPlaque(label, text, kind) {
+    var p = el("div", "answer-plaque " + (kind === "wrong" ? "ap-wrong" : "ap-right"));
+    p.appendChild(el("div", "answer-plaque-label", label));
+    p.appendChild(el("div", "answer-plaque-text", text));
+    return p;
+  }
+
+  function compactAnswers(chosen, correctOpt) {
+    var wrap = el("div", "answers-block answers-compact");
+    wrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
+    wrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
+    return wrap;
+  }
+
+  function firstSentence(s) {
+    if (!s) return "";
+    var i = s.indexOf(". ");
+    if (i === -1) { i = s.indexOf("."); if (i === -1) return s; return s.slice(0, i + 1); }
+    return s.slice(0, i + 1);
+  }
+
+  function causeCard(c) {
+    var b = c.breakdown || {};
+    var card = el("div", "bs-card bs-lav cause-card");
+    card.appendChild(el("div", "bs-label", "Главная причина"));
+    card.appendChild(el("p", "bs-text", firstSentence(b.problem) || b.fix || "Ответ не совпал с условиями задания"));
+    return card;
+  }
+
+  // подробный разбор — сворачивается в «Подробнее»
+  function detailDisclosure(c) {
+    var b = c.breakdown || {};
+    if (!b.problem && !b.fix) return el("div");
+    var item = el("div", "detail");
+    var head = el("button", "detail-head");
+    head.setAttribute("type", "button");
+    head.appendChild(el("span", "detail-title", "Подробнее"));
+    head.appendChild(el("span", "detail-caret", "▾"));
+    var body = el("div", "detail-body");
+    body.style.display = "none";
+    if (b.problem) {
+      var pc = el("div", "bs-card bs-lav");
+      pc.appendChild(el("div", "bs-label", "В чем проблема"));
+      pc.appendChild(el("p", "bs-text", b.problem));
+      body.appendChild(pc);
+    }
+    if (b.fix) {
+      var fc = el("div", "bs-card bs-green");
+      fc.appendChild(el("div", "bs-label", "Как исправить"));
+      fc.appendChild(el("p", "bs-text", b.fix));
+      body.appendChild(fc);
+    }
+    item.appendChild(head);
+    item.appendChild(body);
+    head.addEventListener("click", function () {
+      var open = body.style.display !== "none";
+      body.style.display = open ? "none" : "block";
+      item.classList.toggle("open", !open);
+    });
+    return item;
+  }
+
+  // финал тренировки: фиксируем результат и сохраняем прогресс
+  function finishTraining() {
+    state.mode = "training";
+    var total = CASES.length;
+    var correct = correctCount();
+    state.finishedResult = { correct: correct, total: total, pct: Math.round(correct / total * 100) };
+    saveProgress();
+    renderResults();
+  }
+
+  // продолжить незавершённую тренировку
+  function continueTraining() {
+    if (state.answeredCurrent && state.currentSelected >= 0 && state.index < CASES.length) {
+      renderQuiz();
+      renderAnswerView(currentCase(), state.currentSelected);
+    } else {
+      renderQuiz();
+    }
+  }
+
+  // подсветка проблемной фразы прямо в рендеренном телефоне
+  function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+  function applyHighlight(root, phrase) {
+    if (!root || !phrase) return;
+    var parts = String(phrase).split(/\s+/).map(escapeRegExp);
+    var re = new RegExp(parts.join("\\s+"), "i");
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var n;
+    while ((n = walker.nextNode())) {
+      var m = n.nodeValue.match(re);
+      if (m && m.index >= 0) {
+        var mark = document.createElement("mark");
+        mark.className = "hl";
+        mark.textContent = m[0];
+        var before = document.createTextNode(n.nodeValue.slice(0, m.index));
+        n.nodeValue = n.nodeValue.slice(m.index + m[0].length);
+        n.parentNode.insertBefore(mark, n);
+        n.parentNode.insertBefore(before, mark);
+        break;
+      }
+    }
+  }
+
+  function buildProgress(index, total, isReview) {
     var progressRow = el("div", "progress-row");
     var progressTop = el("div", "progress-top");
-    progressTop.appendChild(el("span", "", "Кейс " + (index + 1) + " из " + total));
+    progressTop.appendChild(el("span", "", (isReview ? "Повторение " : "Кейс ") + (index + 1) + " из " + total));
     progressRow.appendChild(progressTop);
     var track = el("div", "progress-track");
     var fill = el("div", "progress-fill");
@@ -1003,6 +1302,9 @@
     var correct = correctCount();
     var pct = Math.round(correct / total * 100);
     track("finish", { correct: correct, total: total, pct: pct });
+    state.mode = "training";
+    state.finishedResult = { correct: correct, total: total, pct: pct };
+    saveProgress();
 
     var wrap = el("div", "screen");
     var panel = el("div", "results-panel");
@@ -1019,30 +1321,101 @@
     top.appendChild(score);
     panel.appendChild(top);
 
-    // действия перед списком кейсов
+    var wrong = state.answers.filter(function (a) { return !a.correct; });
     var actions = el("div", "results-actions");
-    var cont = el("button", "btn btn-primary btn-md", "Оценить тренажер");
-    cont.addEventListener("click", renderSurvey);
-    actions.appendChild(cont);
+
+    if (wrong.length > 0) {
+      // основное действие — повторение ошибок
+      var rep = el("button", "btn btn-primary btn-md", "Повторить ошибки (" + wrong.length + ")");
+      rep.addEventListener("click", startReview);
+      actions.appendChild(rep);
+      var survey = el("button", "btn btn-ghost btn-md", "Оценить тренажер");
+      survey.addEventListener("click", renderSurvey);
+      actions.appendChild(survey);
+    } else {
+      var survey0 = el("button", "btn btn-primary btn-md", "Оценить тренажер");
+      survey0.addEventListener("click", renderSurvey);
+      actions.appendChild(survey0);
+    }
     var restart = el("button", "btn btn-ghost btn-md", "Пройти заново");
-    restart.addEventListener("click", goHome);
+    restart.addEventListener("click", startFresh);
     actions.appendChild(restart);
     panel.appendChild(actions);
 
-    // кейсы с неверными ответами
-    var wrong = state.answers.filter(function (a) { return !a.correct; });
+    // кейсы с неверными ответами (открытие разбора)
     if (wrong.length > 0) {
       var listWrap = el("div", "mistakes-section");
       listWrap.appendChild(el("h2", "mistakes-title", "Задания для повторения"));
-      listWrap.appendChild(el("p", "mistakes-lead", "Ниже — задания, в которых вы ошиблись. Откройте их, чтобы еще раз сравнить предложение с условиями и посмотреть разбор."));
+      listWrap.appendChild(el("p", "mistakes-lead", "Ниже — задания, в которых вы ошиблись. Откройте их, чтобы посмотреть разбор."));
       var list = el("div", "mistakes-list");
       wrong.forEach(function (a) {
         var item = CASES.filter(function (c) { return c.id === a.caseId; })[0];
-        list.appendChild(mistakeRow(item, a));
+        if (item) list.appendChild(mistakeRow(item, a));
       });
       listWrap.appendChild(list);
       panel.appendChild(listWrap);
     }
+
+    wrap.appendChild(panel);
+    render(wrap);
+  }
+
+  // повторение ошибок: отдельный проход только по неверным кейсам
+  function startReview() {
+    var wrongIds = state.answers.filter(function (a) { return !a.correct; })
+      .map(function (a) { return a.caseId; });
+    state.mode = "review";
+    state.reviewCases = CASES.filter(function (c) { return wrongIds.indexOf(c.id) >= 0; });
+    state.reviewIndex = 0;
+    state.reviewAnswers = [];
+    track("review_start", { count: state.reviewCases.length });
+    renderQuiz();
+  }
+
+  function renderReviewResult() {
+    var total = state.reviewCases.length || 0;
+    var correct = state.reviewAnswers.filter(function (a) { return a.correct; }).length;
+    var pct = total ? Math.round(correct / total * 100) : 0;
+    track("review_finish", { correct: correct, total: total });
+
+    var wrap = el("div", "screen");
+    var panel = el("div", "results-panel");
+
+    var top = el("div", "results-top");
+    var left = el("div", "results-top-left");
+    left.appendChild(el("h1", "results-title", "Повторение ошибок"));
+    left.appendChild(el("p", "results-lead", "Вы прошли повторение по ошибочным кейсам. Оценка основного прохождения сохранена отдельно."));
+    top.appendChild(left);
+    var score = el("div", "results-score");
+    score.appendChild(el("span", "results-num", correct + " / " + total));
+    score.appendChild(el("span", "results-pct", pct + "%"));
+    top.appendChild(score);
+    panel.appendChild(top);
+
+    var stillWrong = state.reviewCases.filter(function (c) {
+      var ans = state.reviewAnswers.filter(function (a) { return a.caseId === c.id; })[0];
+      return !ans || !ans.correct;
+    });
+
+    var actions = el("div", "results-actions");
+    if (stillWrong.length > 0) {
+      var again = el("button", "btn btn-primary btn-md", "Повторить ошибки (" + stillWrong.length + ")");
+      again.addEventListener("click", function () {
+        state.reviewCases = stillWrong;
+        state.reviewIndex = 0;
+        state.reviewAnswers = [];
+        renderQuiz();
+      });
+      actions.appendChild(again);
+    } else {
+      var all = el("button", "btn btn-primary btn-md", "Отлично, все верно");
+      all.setAttribute("disabled", "disabled");
+      actions.appendChild(all);
+    }
+    var back = el("button", "btn btn-ghost btn-md", "К общим результатам");
+    back.addEventListener("click", renderResults);
+    actions.appendChild(back);
+    panel.appendChild(actions);
 
     wrap.appendChild(panel);
     render(wrap);
@@ -1303,7 +1676,7 @@
 
     var actions = el("div", "results-actions");
     var restart = el("button", "btn btn-primary btn-md", "Пройти еще раз");
-    restart.addEventListener("click", goHome);
+    restart.addEventListener("click", startFresh);
     actions.appendChild(restart);
     panel.appendChild(actions);
 
