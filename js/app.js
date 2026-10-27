@@ -641,27 +641,26 @@
     // Правая колонка: вводная
     var panel = el("div", "panel intro-panel");
     panel.appendChild(el("h1", "intro-heading", "Дарк-паттерны в тексте"));
-    panel.appendChild(el("p", "intro-body",
-      "Потренируйтесь замечать, когда текст вводит клиента в заблуждение или давит на него"));
 
-    // Три варианта оценки — раскрывающиеся блоки
-    var evalBlock = el("div", "eval-block");
-    evalBlock.appendChild(el("div", "intro-subhead", "Как оцениваем тексты"));
-    evalBlock.appendChild(el("p", "intro-caption", "В этом тренажере используем три варианта оценки"));
-    evalBlock.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта", "dp"));
-    evalBlock.appendChild(evalItem("Манипуляция или неоднозначная подача", "Так оцениваем текст, если он:\n— давит на чувство вины или самооценку\n— показывает только выгодную сторону сравнения\n— намекает на результат без подтверждения\n— дает обещание без важного уточнения\n\nНеоднозначная фраза еще не значит, что клиентом намеренно манипулируют. В разборе покажем, в чем именно проблема", "man"));
-    evalBlock.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта, а важные ограничения понятны клиенту. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
-    panel.appendChild(evalBlock);
+    // Общий блок «Как устроен тренажер»
+    var howBlock = el("div", "intro-how");
+    howBlock.appendChild(el("div", "intro-how-title", "Как устроен тренажер"));
 
-    // Как проходить
-    var passBlock = el("div", "pass-block");
-    passBlock.appendChild(el("div", "intro-subhead", "Как проходить тренажер"));
-    var passList = el("div", "pass-list");
-    passList.appendChild(passRow("doc", "Сравните текст в телефоне с условиями продукта и выберите ответ"));
-    passList.appendChild(passRow("pick", "После ответа разберем пример: покажем, что не так с текстом и как его исправить. Если все в порядке, расскажем почему"));
-    passBlock.appendChild(passList);
-    panel.appendChild(passBlock);
+    howBlock.appendChild(el("p", "intro-how-text", "Сравните текст в телефоне с условиями продукта и выберите ответ"));
+    howBlock.appendChild(el("p", "intro-how-caption", "В тренажере три варианта оценки"));
 
+    // Три раскрытия
+    var evalWrap = el("div", "eval-list");
+    evalWrap.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта", "dp"));
+    evalWrap.appendChild(evalItem("Манипуляция или неоднозначная подача", "Так оцениваем текст, если он:\n— давит на чувство вины или самооценку\n— показывает только выгодную сторону сравнения\n— намекает на результат без подтверждения\n— дает обещание без важного уточнения\n\nНеоднозначная фраза еще не значит, что клиентом намеренно манипулируют. В разборе покажем, в чем именно проблема", "man"));
+    evalWrap.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта, а важные ограничения понятны клиенту. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
+    howBlock.appendChild(evalWrap);
+
+    howBlock.appendChild(el("p", "intro-how-outro", "После ответа покажем разбор и предложим правки, если они нужны"));
+
+    panel.appendChild(howBlock);
+
+    // Подпись, счётчик, кнопка
     panel.appendChild(el("div", "intro-note", "Все примеры учебные"));
 
     var actions = el("div", "panel-actions");
@@ -685,8 +684,11 @@
     var item = el("div", "eval-item" + (kind ? " eval-" + kind : ""));
     var head = el("button", "eval-head");
     head.setAttribute("type", "button");
+    var ico = el("span", "eval-ico");
+    ico.innerHTML = ICONS[kind === "dp" ? "alert" : (kind === "man" ? "flag" : "check")];
     var titleEl = el("div", "eval-title", title);
     var caret = el("span", "eval-caret", "▾");
+    head.appendChild(ico);
     head.appendChild(titleEl);
     head.appendChild(caret);
     var body = el("div", "eval-body");
@@ -709,15 +711,6 @@
     return item;
   }
 
-  function passRow(icon, text) {
-    var row = el("div", "pass-row");
-    var ic = el("span", "pass-ico");
-    ic.innerHTML = ICONS[icon];
-    row.appendChild(ic);
-    row.appendChild(el("div", "pass-text", text));
-    return row;
-  }
-
   function coverCard(label, cls) {
     var c = el("div", "cover-card " + cls);
     c.appendChild(el("div", "cover-card-label", label));
@@ -730,6 +723,9 @@
   }
 
   var ICONS = {
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+    flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
     doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/><path d="M10 12h5"/><path d="M10 16h5"/></svg>',
     pick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
     com: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9.5L5 19v-3H4z"/></svg>',
