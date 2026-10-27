@@ -1928,6 +1928,9 @@ body {
   border: 1px solid #e4def0;
 }
 
+/* --- Вводная под заголовком (белый фон карточки) --- */
+.intro-lead { font-size: 15px; color: #4b5263; line-height: 1.55; font-weight: 400; margin: 0 0 22px; }
+
 /* --- Общий блок «Как устроен тренажер» --- */
 .intro-how {
   background: #f3eff9;
@@ -1937,9 +1940,7 @@ body {
   margin-bottom: 22px;
 }
 .intro-how-title { font-size: 17px; font-weight: 600; color: #292633; margin-bottom: 12px; }
-.intro-how-text { font-size: 15px; color: #4b5263; line-height: 1.55; margin: 0 0 4px; font-weight: 400; }
-.intro-how-caption { font-size: 13px; color: #686273; line-height: 1.5; margin: 0 0 14px; font-weight: 400; }
-.intro-how-outro { font-size: 15px; color: #4b5263; line-height: 1.55; margin: 14px 0 0; font-weight: 400; }
+.intro-how-caption { font-size: 14px; color: #686273; line-height: 1.5; margin: 0 0 14px; font-weight: 400; }
 
 /* --- Три раскрытия: компактные строки с иконками --- */
 .eval-list { display: flex; flex-direction: column; border: 1px solid #e0d8f0; border-radius: 12px; background: #ffffff; overflow: hidden; }
@@ -1969,6 +1970,14 @@ body {
 .eval-line { font-size: 14px; color: #4b5263; line-height: 1.55; font-weight: 400; margin-bottom: 6px; }
 .eval-line:last-child { margin-bottom: 0; }
 .eval-bullet { padding-left: 14px; }
+
+/* --- Белый блок «Как проходить тренажер» --- */
+.intro-steps { margin-bottom: 22px; }
+.intro-steps-title { font-size: 17px; font-weight: 600; color: #292633; margin-bottom: 12px; }
+.intro-step { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; color: #4b5263; line-height: 1.55; font-weight: 400; margin-bottom: 10px; }
+.intro-step:last-child { margin-bottom: 0; }
+.intro-step-num { flex: none; width: 20px; height: 20px; border-radius: 50%; background: #efe9fb; color: #7151ad; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; margin-top: 3px; }
+.intro-step-text { flex: 1; }
 
 /* --- Заметка без подложки --- */
 .intro-note {

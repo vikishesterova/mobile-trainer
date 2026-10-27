@@ -632,7 +632,7 @@
     cards.appendChild(coverCard("Письмо", "off2"));
     cards.appendChild(coverCard("Баннер", "off3"));
     cover.appendChild(cards);
-    cover.appendChild(el("div", "cover-hint", "В заданиях можно нажимать на кнопки и смотреть, что происходит дальше."));
+    cover.appendChild(el("div", "cover-hint", "В заданиях можно нажимать на кнопки и смотреть, что происходит дальше"));
 
     var left = el("div", "intro-phone");
     left.appendChild(phoneFrame(cover, false));
@@ -641,12 +641,11 @@
     // Правая колонка: вводная
     var panel = el("div", "panel intro-panel");
     panel.appendChild(el("h1", "intro-heading", "Дарк-паттерны в тексте"));
+    panel.appendChild(el("p", "intro-lead", "Потренируйтесь замечать выдуманные факты, давление и неоднозначные обещания в сообщениях для клиентов. Сравнивайте текст с условиями продукта и проверяйте, что из него может понять клиент"));
 
-    // Общий блок «Как устроен тренажер»
+    // Светло-сиреневый блок «Как устроен тренажер»
     var howBlock = el("div", "intro-how");
     howBlock.appendChild(el("div", "intro-how-title", "Как устроен тренажер"));
-
-    howBlock.appendChild(el("p", "intro-how-text", "Сравните текст в телефоне с условиями продукта и выберите ответ"));
     howBlock.appendChild(el("p", "intro-how-caption", "В тренажере три варианта оценки"));
 
     // Три раскрытия
@@ -655,10 +654,14 @@
     evalWrap.appendChild(evalItem("Манипуляция или неоднозначная подача", "Так оцениваем текст, если он:\n— давит на чувство вины или самооценку\n— показывает только выгодную сторону сравнения\n— намекает на результат без подтверждения\n— дает обещание без важного уточнения\n\nНеоднозначная фраза еще не значит, что клиентом намеренно манипулируют. В разборе покажем, в чем именно проблема", "man"));
     evalWrap.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта, а важные ограничения понятны клиенту. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
     howBlock.appendChild(evalWrap);
-
-    howBlock.appendChild(el("p", "intro-how-outro", "После ответа покажем разбор и предложим правки, если они нужны"));
-
     panel.appendChild(howBlock);
+
+    // Белый блок «Как проходить тренажер»
+    var stepsBlock = el("div", "intro-steps");
+    stepsBlock.appendChild(el("div", "intro-steps-title", "Как проходить тренажер"));
+    stepsBlock.appendChild(introStep(1, "Сравните текст в телефоне с условиями продукта и выберите ответ"));
+    stepsBlock.appendChild(introStep(2, "После ответа разберем пример: покажем, что не так с текстом и как его исправить. Если все в порядке, расскажем почему"));
+    panel.appendChild(stepsBlock);
 
     // Подпись, счётчик, кнопка
     panel.appendChild(el("div", "intro-note", "Все примеры учебные"));
@@ -678,6 +681,13 @@
 
     wrap.appendChild(panel);
     render(wrap);
+  }
+
+  function introStep(num, text) {
+    var row = el("div", "intro-step");
+    row.appendChild(el("span", "intro-step-num", String(num)));
+    row.appendChild(el("span", "intro-step-text", text));
+    return row;
   }
 
   function evalItem(title, text, kind) {
