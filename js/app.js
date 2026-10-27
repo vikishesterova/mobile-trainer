@@ -986,7 +986,8 @@
   function selectOption(c, idx) {
     state.currentSelected = idx;
     state.answeredCurrent = true;
-    var arr = activeAnswers();
+    // на случай повторного ответа после «Назад» — на кейс приходится ровно один ответ
+    var arr = activeAnswers().filter(function (a) { return a.caseId !== c.id; });
     arr.push({ caseId: c.id, selectedIndex: idx, correct: c.options[idx].isCorrect });
     if (state.mode === "review") state.reviewAnswers = arr; else state.answers = arr;
     if (state.mode === "training") saveProgress();
@@ -1006,41 +1007,18 @@
     var correctOpt = null;
     c.options.forEach(function (o) { if (o.isCorrect) correctOpt = o; });
     var correct = chosen.isCorrect;
-    var hasExample = !!(c.breakdown && c.breakdown.example);
-
-    // единое состояние версии телефона для переключателя и кнопки
-    var viewMode = "source";
-    var viewBtn = null;
-
-    function setViewMode(m) {
-      viewMode = m;
-      renderAnswerPhone(phoneCol, c, m, setViewMode);
-      if (viewBtn) viewBtn.hidden = (m === "fixed");
-    }
 
     // 1. навигация и прогресс
     panel.appendChild(buildTopNav());
     panel.appendChild(buildProgress(activeIndex(), activeCases().length, state.mode === "review"));
 
-    // 2. результат ответа пользователя
+    // 2. результат ответа
     panel.appendChild(resultOfAnswer(correct, chosen, correctOpt));
 
-    // 3. разбор исходного текста (категория + объяснение)
-    panel.appendChild(el("div", "eval-section-title", "Разбор исходного текста"));
+    // 3. разбор
     panel.appendChild(messageEvaluation(c));
 
-    // 4. вторичная кнопка — переключить телефон на «Стало»
-    if (hasExample) {
-      viewBtn = el("button", "btn-view", "Посмотреть исправленный текст");
-      viewBtn.setAttribute("type", "button");
-      viewBtn.addEventListener("click", function () {
-        setViewMode("fixed");
-        scrollPhoneIntoView(phoneCol);
-      });
-      panel.appendChild(viewBtn);
-    }
-
-    // 5. кнопка перехода
+    // 4. кнопка перехода
     var isLast = activeIndex() === activeCases().length - 1;
     var nextLabel;
     if (state.mode === "review") nextLabel = isLast ? "Показать итог повторения" : "Следующий кейс";
@@ -1057,26 +1035,20 @@
     nextWrap.appendChild(next);
     panel.appendChild(nextWrap);
 
-    // телефон: переключатель над ним, по умолчанию «Было»
-    renderAnswerPhone(phoneCol, c, "source", setViewMode);
+    // телефон: переключатель «Было/Стало» над ним, по умолчанию «Было»
+    renderAnswerPhone(phoneCol, c, "source");
 
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function scrollPhoneIntoView(phoneCol) {
-    if (!phoneCol) return;
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    phoneCol.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  }
-
   // телефон разбора: переключатель «Было/Стало» над ним + пример в том же формате
-  function renderAnswerPhone(phoneCol, c, mode, onToggle) {
+  function renderAnswerPhone(phoneCol, c, mode) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
     var hasExample = !!(c.breakdown && c.breakdown.example);
     if (hasExample) {
       phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
-        if (onToggle) onToggle(m);
+        renderAnswerPhone(phoneCol, c, m);
       }));
     }
     var showFixed = mode === "fixed";
@@ -1120,60 +1092,40 @@
     return b;
   }
 
-  // результат ответа пользователя — подпись «Ваш ответ», чтобы не путать с оценкой текста
+  // результат: вердикт + одна компактная карточка ответов
   function resultOfAnswer(correct, chosen, correctOpt) {
     var frag = document.createDocumentFragment();
-    var box = el("div", "answer-result");
-    box.appendChild(el("div", "answer-result-label", "Ваш ответ"));
-    if (correct) {
-      var res = el("div", "result-plaque rp-correct");
-      var rHead = el("div", "result-head");
-      rHead.appendChild(el("span", "result-ico", "✓"));
-      rHead.appendChild(el("div", "result-title", "Верно"));
-      res.appendChild(rHead);
-      var resBody = el("div", "result-body");
-      resBody.appendChild(el("div", "result-body-text", chosen.text));
-      res.appendChild(resBody);
-      box.appendChild(res);
-    } else {
-      box.appendChild(el("div", "result-status", "Не совсем"));
-      var answersWrap = el("div", "answers-block answers-compact");
-      answersWrap.appendChild(answerPlaque("Ваш ответ", chosen.text, "wrong"));
-      answersWrap.appendChild(answerPlaque("Правильный ответ", correctOpt.text, "right"));
-      box.appendChild(answersWrap);
-    }
-    frag.appendChild(box);
+    frag.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Неверно"));
+
+    var card = el("div", "answer-card");
+    card.appendChild(answerRow("Вы выбрали", chosen.text, correct ? "ok" : "wrong"));
+    if (!correct) card.appendChild(answerRow("Верный ответ", correctOpt.text, "ok"));
+    frag.appendChild(card);
     return frag;
   }
 
-  function answerPlaque(label, text, kind) {
-    var p = el("div", "answer-plaque " + (kind === "wrong" ? "ap-wrong" : "ap-right"));
-    p.appendChild(el("div", "answer-plaque-label", label));
-    p.appendChild(el("div", "answer-plaque-text", text));
-    return p;
+  function answerRow(caption, text, accent) {
+    var row = el("div", "answer-row");
+    row.appendChild(el("span", "answer-dot dot-" + accent));
+    var col = el("div", "answer-col");
+    col.appendChild(el("div", "answer-caption", caption));
+    col.appendChild(el("div", "answer-text", text));
+    row.appendChild(col);
+    return row;
   }
 
-  // оценка самого сообщения: категория + объяснение
+  // разбор: «Что не так» / «Почему текст корректный»
   function messageEvaluation(c) {
     var frag = document.createDocumentFragment();
     var b = c.breakdown || {};
-
-    var evalHead = el("div", "eval-message");
-    evalHead.appendChild(el("div", "eval-message-label", "Оценка сообщения"));
-    if (c.type) evalHead.appendChild(el("span", "eval-message-type", c.type));
-    frag.appendChild(evalHead);
-
-    if (b.ok) {
-      var okCard = el("div", "bs-card bs-green");
-      okCard.appendChild(el("div", "bs-label", "Почему текст можно оставить"));
-      okCard.appendChild(el("p", "bs-text", b.ok));
-      frag.appendChild(okCard);
-    } else {
-      var pCard = el("div", "bs-card bs-lav");
-      pCard.appendChild(el("div", "bs-label", "В чем проблема"));
-      pCard.appendChild(el("p", "bs-text", b.problem));
-      frag.appendChild(pCard);
-    }
+    var isOk = !!b.ok;
+    var card = el("div", "bs-card " + (isOk ? "bs-green" : "bs-lav"));
+    var head = el("div", "bs-head");
+    head.appendChild(el("div", "bs-label", isOk ? "Почему текст корректный" : "Что не так"));
+    if (c.type) head.appendChild(el("span", "bs-type", c.type));
+    card.appendChild(head);
+    card.appendChild(el("p", "bs-text", isOk ? b.ok : b.problem));
+    frag.appendChild(card);
     return frag;
   }
 
