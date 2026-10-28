@@ -75,7 +75,7 @@
   // ============================================================================
   // Сохранение прогресса в текущем браузере (localStorage)
   // ============================================================================
-  var PROGRESS_KEY = "dark-patterns-progress-v1";
+  var PROGRESS_KEY = "dark-patterns-progress-v2";
 
   // активный список кейсов/индекс/ответы — по режиму (тренировка или повторение)
   function activeCases() { return state.mode === "review" ? state.reviewCases : CASES; }
@@ -106,7 +106,7 @@
   function saveProgress() {
     try {
       window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({
-        version: 1,
+        version: 2,
         ids: CASES.map(function (c) { return c.id; }),
         index: state.index,
         answers: state.answers,
@@ -127,7 +127,7 @@
     var data;
     try { data = JSON.parse(window.localStorage.getItem(PROGRESS_KEY)); }
     catch (e) { return { status: 0 }; }
-    if (!data || data.version !== 1) return { status: 0 };
+    if (!data || data.version !== 2) return { status: 0 };
 
     var currentIds = CASES.map(function (c) { return c.id; }).join(",");
     var savedIds = (data.ids || []).join(",");
@@ -673,7 +673,7 @@
 
   // Элементы на телефоне реагируют на тап: появляется попап, как ответ приложения
   function attachPhoneTaps(screen, sd) {
-    var tappable = screen.querySelectorAll("button, .msg-cta, .push-notif");
+    var tappable = screen.querySelectorAll("button, .msg-cta, .push-notif, .banner-card");
     Array.prototype.forEach.call(tappable, function (b) {
       b.addEventListener("click", function (ev) {
         ev.stopPropagation();
@@ -757,7 +757,7 @@
     var evalWrap = el("div", "eval-list");
     evalWrap.appendChild(evalItem("Дарк-паттерн", "Дарк-паттерны — приемы в интерфейсах и текстах, которые подталкивают человека к действиям, выгодным компании, но нежелательным для него\n\nВ этом тренажере к дарк-паттернам относятся тексты с выдуманными фактами или обещаниями, которые противоречат условиям продукта", "dp"));
     evalWrap.appendChild(evalItem("Манипуляция или неоднозначная подача", "Текст относится к этой категории, если он:\n— давит на чувство вины или самооценку\n— показывает только выгодную сторону сравнения\n— намекает на результат без подтверждения\n— дает обещание без важного уточнения\n\nНеоднозначная фраза еще не значит, что клиентом намеренно манипулируют. В разборе покажем, в чем именно проблема", "man"));
-    evalWrap.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта и раскрывает важные условия. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
+    evalWrap.appendChild(evalItem("Текст без подвоха", "Текст совпадает с условиями продукта и раскрывает важные условия. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
     howBlock.appendChild(evalWrap);
     panel.appendChild(howBlock);
 
@@ -1143,7 +1143,7 @@
     var frag = document.createDocumentFragment();
     var box = el("div", "result-block");
     box.appendChild(el("div", "result-caption", "Ваш ответ"));
-    box.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Неверно"));
+    box.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Не совсем"));
     var zone = el("div", "answers-zone");
     if (correct) {
       zone.appendChild(el("div", "chosen-text", chosen.text));
@@ -1165,18 +1165,25 @@
     return row;
   }
 
-  // разбор: «Что не так» / «Почему текст корректный»
+  // разбор: «Что не так» / «Почему здесь нет подвоха»
   function messageEvaluation(c) {
     var frag = document.createDocumentFragment();
     var b = c.breakdown || {};
     var isOk = !!b.ok;
     var card = el("div", "explain-card");
     var head = el("div", "explain-head");
-    head.appendChild(el("div", "explain-title", isOk ? "Почему текст корректный" : "Что не так"));
+    head.appendChild(el("div", "explain-title", isOk ? "Почему здесь нет подвоха" : "Что не так"));
     if (c.type) head.appendChild(el("span", "explain-cat", c.type));
     card.appendChild(head);
     card.appendChild(el("p", "explain-text", isOk ? b.ok : b.problem));
     frag.appendChild(card);
+    // для ок-кейсов дополнительно блок «Что важно сохранить»
+    if (isOk && b.keep) {
+      var keepCard = el("div", "keep-card");
+      keepCard.appendChild(el("div", "keep-title", "Что важно сохранить"));
+      keepCard.appendChild(el("p", "keep-text", b.keep));
+      frag.appendChild(keepCard);
+    }
     return frag;
   }
 
@@ -1195,29 +1202,33 @@
     goToIndex(state.index);
   }
 
-  // подсветка проблемной фразы прямо в рендеренном телефоне
+  // подсветка проблемных фраз прямо в рендеренном телефоне (строка или массив)
   function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
-  function applyHighlight(root, phrase, cls) {
-    if (!root || !phrase) return;
-    var parts = String(phrase).split(/\s+/).map(escapeRegExp);
-    var re = new RegExp(parts.join("\\s+"), "i");
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-    var n;
-    while ((n = walker.nextNode())) {
-      var m = n.nodeValue.match(re);
-      if (m && m.index >= 0) {
-        var mark = document.createElement("mark");
-        mark.className = cls || "hl";
-        mark.textContent = m[0];
-        var before = document.createTextNode(n.nodeValue.slice(0, m.index));
-        n.nodeValue = n.nodeValue.slice(m.index + m[0].length);
-        n.parentNode.insertBefore(mark, n);
-        n.parentNode.insertBefore(before, mark);
-        break;
+  function applyHighlight(root, phrases, cls) {
+    if (!root || !phrases) return;
+    var list = Array.isArray(phrases) ? phrases : [phrases];
+    list.forEach(function (phrase) {
+      if (!phrase) return;
+      var parts = String(phrase).split(/\s+/).map(escapeRegExp);
+      var re = new RegExp(parts.join("\\s+"), "i");
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+      var n;
+      while ((n = walker.nextNode())) {
+        var m = n.nodeValue.match(re);
+        if (m && m.index >= 0) {
+          var mark = document.createElement("mark");
+          mark.className = cls || "hl";
+          mark.textContent = m[0];
+          var before = document.createTextNode(n.nodeValue.slice(0, m.index));
+          n.nodeValue = n.nodeValue.slice(m.index + m[0].length);
+          n.parentNode.insertBefore(mark, n);
+          n.parentNode.insertBefore(before, mark);
+          break;
+        }
       }
-    }
+    });
   }
 
   function buildProgress(index, total, isReview) {
@@ -1244,11 +1255,18 @@
     var b = c.breakdown;
 
     if (b.ok) {
-      // корректное предложение: одна карточка «почему текст можно оставить»
+      // текст без подвоха: одна карточка «почему текст можно оставить»
       var card = el("div", "bs-card bs-green");
       card.appendChild(el("div", "bs-label", "Почему текст можно оставить"));
       card.appendChild(el("p", "bs-text", b.ok));
       block.appendChild(card);
+      // дополнительный блок «Что важно сохранить»
+      if (b.keep) {
+        var keepCard = el("div", "bs-card bs-keep");
+        keepCard.appendChild(el("div", "bs-label", "Что важно сохранить"));
+        keepCard.appendChild(el("p", "bs-text", b.keep));
+        block.appendChild(keepCard);
+      }
     } else {
       // 1. В чем проблема
       var pCard = el("div", "bs-card bs-lav");
@@ -1491,7 +1509,7 @@
   }
 
   function resultsLead(pct) {
-    if (pct >= 100) return "Все ответы верные. Вы разобрали корректные предложения, манипуляции и дарк-паттерны.";
+    if (pct >= 100) return "Все ответы верные. Вы разобрали тексты без подвоха, манипуляции и дарк-паттерны.";
     return "Вы прошли тренажер. Ниже — задания, в которых вы ошиблись. Откройте их, чтобы еще раз сравнить предложение с условиями и посмотреть разбор.";
   }
 

@@ -1471,7 +1471,7 @@ body {
 @media (max-width: 860px) {
   .layout { flex-direction: column; align-items: center; gap: 26px; }
   .panel { flex: 1 1 auto; max-width: 460px; width: 100%; padding: 22px; }
-  .phone-wrap { position: static; }
+  .case-phone { position: static; }
   .app { padding: 20px 14px calc(50px + env(safe-area-inset-bottom, 0px)); }
 }
 
@@ -2056,7 +2056,8 @@ body {
    ============================================================================ */
 /* телефон подстраивается под высоту окна, сохраняя пропорции */
 .phone { width: auto; height: min(660px, calc(100vh - 96px)); aspect-ratio: 330 / 640; }
-.phone-wrap { position: sticky; top: 16px; align-self: flex-start; }
+/* закрепляется весь блок: телефон + переключатель «Было/Стало» держатся вместе */
+.case-phone { position: sticky; top: 16px; }
 
 /* меньше декоративная иллюстрация внутри телефона */
 .illust { height: 90px; font-size: 40px; }
@@ -2123,6 +2124,7 @@ body {
 .bs-card + .bs-card { margin-top: 16px; }
 .bs-lav { background: #f7f5fb; }
 .bs-green { background: #f1f8f4; }
+.bs-keep { background: #f6f3fc; }
 .bs-label { font-size: 16px; font-weight: 700; color: #292633; margin-bottom: 10px; }
 .bs-text {
   font-size: 16px; color: #3a3642; line-height: 1.5;
@@ -2248,7 +2250,7 @@ body {
    ============================================================================ */
 
 /* контейнер телефона в квизе */
-.case-phone { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.case-phone { display: flex; flex-direction: column; align-items: center; gap: 36px; }
 
 /* подсветка проблемной фразы после ответа */
 .hl {
@@ -2331,7 +2333,7 @@ body {
 }
 .btn-view:hover { background: #f3eef9; }
 
-/* разбор: «Что не так» / «Почему текст корректный» — мягкая сиреневая подложка */
+/* разбор: «Что не так» / «Почему здесь нет подвоха» — мягкая сиреневая подложка */
 .explain-card {
   background: #f6f3fc;
   border: 1px solid #e4dcf6;
@@ -2346,6 +2348,17 @@ body {
 .explain-title { font-size: 16px; font-weight: 700; color: #292633; }
 .explain-cat { font-size: 12px; font-weight: 700; color: #8a82a3; }
 .explain-text { font-size: 15px; color: #3a3642; line-height: 1.5; margin: 0; }
+
+/* блок «Что важно сохранить» для ок-кейсов */
+.keep-card {
+  margin-top: 14px;
+  background: #f6f3fc;
+  border: 1px solid #e4dcf6;
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.keep-title { font-size: 16px; font-weight: 700; color: #292633; margin-bottom: 10px; }
+.keep-text { font-size: 15px; color: #3a3642; line-height: 1.5; margin: 0; }
 
 /* мягкая мятная подсветка изменённых фрагментов в «Стало» */
 .hl-mint {
