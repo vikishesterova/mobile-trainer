@@ -1171,7 +1171,7 @@ body {
   color: #9fc0ff;
   margin-bottom: 5px;
 }
-.case-context-text { font-size: 14px; color: #dfe3ee; line-height: 1.55; margin: 0; }
+.case-context-text { font-size: 14px; color: #dfe3ee; line-height: 1.55; margin: 0; white-space: pre-line; }
 
 .breakdown {
   background: rgba(255, 255, 255, 0.05);
@@ -2129,6 +2129,7 @@ body {
 .bs-text {
   font-size: 16px; color: #3a3642; line-height: 1.5;
   margin: 0 0 10px;
+  white-space: pre-line;
 }
 .bs-text:last-child { margin-bottom: 0; }
 
@@ -2353,7 +2354,7 @@ body {
 }
 .explain-title { font-size: 16px; font-weight: 700; color: #292633; }
 .explain-cat { font-size: 12px; font-weight: 700; color: #8a82a3; }
-.explain-text { font-size: 15px; color: #3a3642; line-height: 1.5; margin: 0; }
+.explain-text { font-size: 15px; color: #3a3642; line-height: 1.5; margin: 0; white-space: pre-line; }
 
 /* блок «Что важно сохранить» для ок-кейсов */
 .keep-card {

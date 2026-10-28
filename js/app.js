@@ -512,7 +512,7 @@
     screen.appendChild(vis);
 
     var bottom = el("div", "story-bottom");
-    bottom.appendChild(el("div", "story-reply", "Ответить..."));
+    bottom.appendChild(el("div", "story-reply", "Ответить"));
     bottom.appendChild(el("span", "story-send", "➤"));
     screen.appendChild(bottom);
     return screen;
@@ -1399,7 +1399,6 @@
     if (wrong.length > 0) {
       var listWrap = el("div", "mistakes-section");
       listWrap.appendChild(el("h2", "mistakes-title", "Задания для повторения"));
-      listWrap.appendChild(el("p", "mistakes-lead", "Ниже — задания, в которых вы ошиблись. Откройте их, чтобы посмотреть разбор."));
       var list = el("div", "mistakes-list");
       wrong.forEach(function (a) {
         var item = CASES.filter(function (c) { return c.id === a.caseId; })[0];
@@ -1499,7 +1498,7 @@
     body.appendChild(el("div", "mistake-field", "Вопрос"));
     body.appendChild(el("div", "mistake-value", item.question));
     body.appendChild(el("div", "mistake-field", "Ваш ответ"));
-    body.appendChild(el("div", "mistake-value wrong", (chosenOpt ? chosenOpt.text : "") + " (" + (answer.selectedIndex + 1) + ")"));
+    body.appendChild(el("div", "mistake-value wrong", chosenOpt ? chosenOpt.text : ""));
     body.appendChild(el("div", "mistake-field", "Правильный ответ"));
     body.appendChild(el("div", "mistake-value right", (correctOpt ? correctOpt.text : "")));
     body.appendChild(el("div", "mistake-divider"));
@@ -1531,7 +1530,7 @@
 
   function resultsLead(pct) {
     if (pct >= 100) return "Все ответы верные. Вы разобрали тексты без подвоха, манипуляции и дарк-паттерны.";
-    return "Вы прошли тренажер. Ниже — задания, в которых вы ошиблись. Откройте их, чтобы еще раз сравнить предложение с условиями и посмотреть разбор.";
+    return "Можно повторить задания с ошибками или открыть их разбор";
   }
 
   // ============================================================================
