@@ -22,16 +22,20 @@
 
   // --- утилиты -------------------------------------------------------------------
 
-  // Неразрывные пробелы после коротких предлогов/союзов, чтобы не оставлять их
-  // одних в конце строки (правило русской типографики).
+  // Суммы и единицы переносим целиком, короткие слова связываем со следующим.
   function nbspJoin(text) {
     var s = String(text);
-    // короткие предлоги/союзы не оставляем в конце строки
-    s = s.replace(/(\s)(в|к|с|о|у|за|на|до|по|из|от|об|без|для|но|и|а)\s+(?=\S)/g, "$1$2\u00A0");
-    // число + единица измерения (₽, %, $, €)
-    s = s.replace(/(\d)\s+([₽$€%])/g, "$1\u00A0$2");
-    // единица + следующее слово (чтобы «₽ в день» не рвалось)
-    s = s.replace(/([₽$€%])\s+(?=\S)/g, "$1\u00A0");
+    // Все группы цифр внутри суммы, включая уже типографированные пробелы.
+    s = s.replace(/\d+(?:[ \t\u00A0\u202F]\d{3})+(?!\d)/g, function (amount) {
+      return amount.replace(/[ \t\u00A0\u202F]/g, "\u00A0");
+    });
+    s = s.replace(/(\d)[ \t\u00A0\u202F]+([₽$€%]|м[²³]|Мбит\/с)(?=$|[\s.,!?;:)])/gi, "$1\u00A0$2");
+    // Повторный проход нужен для сочетаний «и в», «а для» и начала предложения.
+    var previous;
+    do {
+      previous = s;
+      s = s.replace(/(^|\s)(в|во|к|ко|с|со|о|об|обо|у|за|на|до|по|из|от|без|для|при|про|под|над|перед|через|между|но|и|а|не)[ \t]+(?=\S)/gi, "$1$2\u00A0");
+    } while (s !== previous);
     return s;
   }
 
@@ -369,7 +373,24 @@
   // иллюстрация (цветной блок с эмодзи)
   function illust(icon, size) {
     var d = el("div", "illust" + (size ? " size-" + size : ""));
-    d.textContent = icon || "✦";
+    if (icon === "💰") {
+      d.classList.add("illust-account");
+      d.setAttribute("aria-hidden", "true");
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 160 120");
+      svg.setAttribute("focusable", "false");
+      svg.innerHTML = '<ellipse cx="80" cy="106" rx="55" ry="6" fill="#9e88cb" opacity=".16"/>' +
+        '<rect x="52" y="15" width="71" height="83" rx="12" fill="#c4b5ec" transform="rotate(8 88 56)"/>' +
+        '<rect x="27" y="24" width="94" height="74" rx="14" fill="#fff" stroke="#c8b9e7" stroke-width="1.5"/>' +
+        '<rect x="39" y="40" width="31" height="5" rx="2.5" fill="#9580bc"/>' +
+        '<rect x="39" y="54" width="51" height="4" rx="2" fill="#ded5ed"/>' +
+        '<rect x="39" y="65" width="39" height="4" rx="2" fill="#ded5ed"/>' +
+        '<circle cx="111" cy="81" r="24" fill="#8b72be" stroke="#e9e1f8" stroke-width="3"/>' +
+        '<text x="111" y="91" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="600" fill="#fff">₽</text>';
+      d.appendChild(svg);
+    } else {
+      d.textContent = icon || "✦";
+    }
     return d;
   }
 

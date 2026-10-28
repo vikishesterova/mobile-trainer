@@ -2252,14 +2252,20 @@ body {
 /* контейнер телефона в квизе */
 .case-phone { display: flex; flex-direction: column; align-items: center; gap: 36px; }
 
-/* подсветка проблемной фразы после ответа */
-.hl {
-  background: #ffe9a8;
-  color: #292633;
-  border-radius: 4px;
-  padding: 0 2px;
-  box-shadow: 0 0 0 1px rgba(198, 138, 20, 0.35);
+/* Ненавязчивая отметка фразы, без цветной плашки и изменения текста. */
+.hl,
+.hl-mint {
+  background: transparent;
+  color: inherit;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .18em;
+  text-decoration-skip-ink: auto;
 }
+.hl { text-decoration-color: rgba(116, 95, 144, .5); }
 
 /* переключатель «Было / Стало» — над телефоном, в его колонке */
 .src-toggle {
@@ -2360,14 +2366,16 @@ body {
 .keep-title { font-size: 16px; font-weight: 700; color: #292633; margin-bottom: 10px; }
 .keep-text { font-size: 15px; color: #3a3642; line-height: 1.5; margin: 0; }
 
-/* мягкая мятная подсветка изменённых фрагментов в «Стало» */
+/* В исправленном тексте оставляем только спокойную линию под фразой. */
 .hl-mint {
-  background: #c9efd9;
-  color: #14351f;
-  border-radius: 4px;
-  padding: 0 2px;
-  box-shadow: 0 0 0 1px rgba(46, 133, 86, 0.25);
+  text-decoration-color: rgba(54, 123, 90, .5);
 }
+.fmt-screen-story .hl,
+.fmt-screen-story .hl-mint {
+  text-decoration-color: rgba(255, 255, 255, .55);
+}
+
+.illust-account svg { width: 144px; height: 108px; max-width: 80%; overflow: visible; }
 
 /* исправленный пример: подпись формата и кнопка (сохраняем структуру сообщения) */
 .ex-format {
