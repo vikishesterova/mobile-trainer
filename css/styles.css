@@ -2208,6 +2208,7 @@ body {
 .mistake-caret { flex: none; color: #9b95a6; font-size: 14px; transition: transform .2s ease; }
 .mistake-head.open .mistake-caret { transform: rotate(180deg); }
 .mistake-body { padding: 0 16px 18px 34px; }
+.mistake-offer { white-space: pre-line; }
 .mistake-fix { font-size: 16px; color: #3a3642; line-height: 1.6; }
 .mistakes-section { margin-top: 30px; padding-top: 28px; border-top: 1px solid #ded6e9; }
 .mistakes-title { font-size: 20px; font-weight: 800; color: #292633; margin: 0 0 8px; }

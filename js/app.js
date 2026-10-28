@@ -1494,7 +1494,7 @@
     item.options.forEach(function (o) { if (o.isCorrect) correctOpt = o; });
 
     body.appendChild(el("div", "mistake-field", "Предложение"));
-    body.appendChild(el("div", "mistake-value", textOfCase(item)));
+    body.appendChild(el("div", "mistake-value mistake-offer", textOfCase(item)));
     body.appendChild(el("div", "mistake-field", "Вопрос"));
     body.appendChild(el("div", "mistake-value", item.question));
     body.appendChild(el("div", "mistake-field", "Ваш ответ"));
@@ -1521,7 +1521,7 @@
     (sd.paragraphs || []).forEach(function (p) { lines.push(p); });
     if (sd.cards) sd.cards.forEach(function (c) { lines.push(c.title + " — " + c.text); });
     if (sd.stories) sd.stories.forEach(function (s) { lines.push(s); });
-    return lines.join(" ");
+    return lines.join("\n\n");
   }
 
   function resultsTitle(pct) {
