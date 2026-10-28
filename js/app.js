@@ -35,10 +35,15 @@
     return s;
   }
 
+  // убираем завершающую точку у блока текста (внутренние точки между предложениями сохраняем)
+  function noPeriod(text) {
+    return String(text).replace(/\.\s*$/, "");
+  }
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
-    if (text !== undefined) node.textContent = nbspJoin(text);
+    if (text !== undefined) node.textContent = nbspJoin(noPeriod(text));
     return node;
   }
 
@@ -752,7 +757,7 @@
     var evalWrap = el("div", "eval-list");
     evalWrap.appendChild(evalItem("Дарк-паттерн", "В тексте есть выдуманные факты или обещания, которые противоречат условиям продукта", "dp"));
     evalWrap.appendChild(evalItem("Манипуляция или неоднозначная подача", "Так оцениваем текст, если он:\n— давит на чувство вины или самооценку\n— показывает только выгодную сторону сравнения\n— намекает на результат без подтверждения\n— дает обещание без важного уточнения\n\nНеоднозначная фраза еще не значит, что клиентом намеренно манипулируют. В разборе покажем, в чем именно проблема", "man"));
-    evalWrap.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта, а важные ограничения понятны клиенту. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
+    evalWrap.appendChild(evalItem("Корректное предложение", "Текст совпадает с условиями продукта и раскрывает важные условия. Реальные сроки, лимиты и остатки мест сами по себе не делают текст дарк-паттерном", "ok"));
     howBlock.appendChild(evalWrap);
     panel.appendChild(howBlock);
 
@@ -1044,7 +1049,7 @@
       viewMode = m;
       renderAnswerPhone(phoneCol, c, m, setViewMode);
       if (viewBtn) {
-        viewBtn.textContent = m === "fixed" ? "Показать исходный текст" : "Посмотреть исправленный текст";
+        viewBtn.textContent = m === "fixed" ? "Посмотреть, как было" : "Посмотреть исправленный текст";
       }
     }
 
@@ -1109,7 +1114,7 @@
     var bar = el("div", "src-toggle");
     if (!(c.breakdown && c.breakdown.example)) return bar;
     bar.setAttribute("role", "group");
-    bar.setAttribute("aria-label", "Сравнить исходное и исправленное сообщение");
+    bar.setAttribute("aria-label", "Сравнить, как было и как стало");
     bar.appendChild(toggleSeg("Было", "source", activeMode !== "fixed", onToggle));
     bar.appendChild(toggleSeg("Стало", "fixed", activeMode === "fixed", onToggle));
     return bar;
@@ -1160,14 +1165,14 @@
     return row;
   }
 
-  // разбор: «Разбор исходного текста» / «Почему текст корректный»
+  // разбор: «Что не так» / «Почему текст корректный»
   function messageEvaluation(c) {
     var frag = document.createDocumentFragment();
     var b = c.breakdown || {};
     var isOk = !!b.ok;
     var card = el("div", "explain-card");
     var head = el("div", "explain-head");
-    head.appendChild(el("div", "explain-title", isOk ? "Почему текст корректный" : "Разбор исходного текста"));
+    head.appendChild(el("div", "explain-title", isOk ? "Почему текст корректный" : "Что не так"));
     if (c.type) head.appendChild(el("span", "explain-cat", c.type));
     card.appendChild(head);
     card.appendChild(el("p", "explain-text", isOk ? b.ok : b.problem));
