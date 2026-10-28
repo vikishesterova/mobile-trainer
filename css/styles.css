@@ -2301,15 +2301,22 @@ body {
   margin-bottom: 8px;
 }
 .verdict-line {
-  display: flex; align-items: center; gap: 9px;
-  font-size: 18px; font-weight: 800; color: #292633;
-  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 11px;
+  font-size: 22px; font-weight: 900; letter-spacing: 0.2px;
+  padding: 14px 16px; border-radius: 14px;
+  margin-bottom: 16px;
 }
 .verdict-line::before {
-  content: ""; width: 10px; height: 10px; border-radius: 50%;
+  content: ""; width: 14px; height: 14px; border-radius: 50%; flex: none;
 }
-.vd-correct::before { background: #557963; }
-.vd-wrong::before { background: #95616D; }
+.vd-correct {
+  color: #1f6b43; background: #e2f6ea; border: 1px solid #b7e3c9;
+}
+.vd-correct::before { background: #1f9d54; box-shadow: 0 0 0 3px rgba(31, 157, 84, 0.18); }
+.vd-wrong {
+  color: #b3364a; background: #fdeef1; border: 1px solid #f3c3cc;
+}
+.vd-wrong::before { background: #e5484d; box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.16); }
 .answers-zone {
   background: #f7f6fa;
   border: 1px solid #e6e0f2;
@@ -2318,16 +2325,16 @@ body {
   margin-bottom: 18px;
 }
 .chosen-text {
-  font-size: 15px; color: #292633; line-height: 1.5;
+  font-size: 15px; color: #292633; line-height: 1.55;
   padding: 12px 0;
 }
 .answers-plain { display: flex; flex-direction: column; }
 .ans-row { padding: 12px 0; }
 .ans-row + .ans-row { border-top: 1px solid #e6e0f2; }
-.ans-caption { font-size: 12px; font-weight: 600; color: #7a738a; margin-bottom: 4px; }
-.ans-text { font-size: 15px; line-height: 1.5; }
-.ans-row.secondary .ans-text { color: #6b6470; font-weight: 400; }
-.ans-row.primary .ans-text { color: #292633; font-weight: 600; }
+.ans-caption { font-size: 12px; font-weight: 700; color: #6b6377; margin-bottom: 4px; }
+.ans-text { font-size: 15px; line-height: 1.55; }
+.ans-row.secondary .ans-text { color: #55505e; font-weight: 400; }
+.ans-row.primary .ans-text { color: #1f6b43; font-weight: 700; }
 
 /* кнопка «Посмотреть исправленный текст» (вторичное действие) */
 .btn-view {
