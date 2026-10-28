@@ -1094,12 +1094,6 @@
   function renderAnswerPhone(phoneCol, c, mode, onToggle) {
     if (!phoneCol) return;
     phoneCol.innerHTML = "";
-    var hasExample = !!(c.breakdown && c.breakdown.example);
-    if (hasExample) {
-      phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
-        if (onToggle) onToggle(m);
-      }));
-    }
     var showFixed = mode === "fixed";
     var sd = showFixed ? c.breakdown.example : c.screen;
     var fmt = sd.format || c.screen.format || "landing";
@@ -1107,6 +1101,12 @@
     if (showFixed) applyHighlight(frame, sd.highlight, "hl-mint");
     else applyHighlight(frame, c.screen && c.screen.highlight, "hl");
     phoneCol.appendChild(frame);
+    // переключатель «Было / Стало» — под телефоном, в той же колонке
+    if (c.breakdown && c.breakdown.example) {
+      phoneCol.appendChild(buildSourceToggle(c, mode, function (m) {
+        if (onToggle) onToggle(m);
+      }));
+    }
   }
 
   // переключатель «Было / Стало» — только если есть исправленный пример
