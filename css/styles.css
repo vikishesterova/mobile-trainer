@@ -1472,7 +1472,7 @@ body {
   .layout { flex-direction: column; align-items: center; gap: 26px; }
   .panel { flex: 1 1 auto; max-width: 460px; width: 100%; padding: 22px; }
   .phone-wrap { position: static; }
-  .app { padding: 20px 14px 50px; }
+  .app { padding: 20px 14px calc(50px + env(safe-area-inset-bottom, 0px)); }
 }
 
 @media (max-width: 400px) {
