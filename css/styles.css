@@ -2284,7 +2284,12 @@ body {
 /* разбор: отступы между самостоятельными блоками */
 .panel-next { margin-top: 26px; }
 
-/* результат: спокойный статус + блок ответов на нейтральной подложке */
+/* результат: подпись «Ваш ответ» + спокойный статус + блок ответов */
+.result-block { margin-bottom: 22px; }
+.result-caption {
+  font-size: 12px; font-weight: 700; color: #8a82a3;
+  margin-bottom: 8px;
+}
 .verdict-line {
   display: flex; align-items: center; gap: 9px;
   font-size: 18px; font-weight: 800; color: #292633;

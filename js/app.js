@@ -908,14 +908,8 @@
     if (activeIndex() > 0) {
       var back = el("button", "btn-nav", "← Назад");
       back.addEventListener("click", function () {
-        var i = activeIndex();
-        var prev = activeCases()[i - 1];
-        setActiveIndex(i - 1);
-        state.currentSelected = -1;
-        state.answeredCurrent = false;
-        dropAnswerForCase(prev.id);
+        goToIndex(activeIndex() - 1);
         if (state.mode === "training") saveProgress();
-        renderQuiz();
       });
       row.appendChild(back);
     }
@@ -925,12 +919,35 @@
     return row;
   }
 
-  function dropAnswerForCase(caseId) {
-    if (state.mode === "review") {
-      state.reviewAnswers = state.reviewAnswers.filter(function (a) { return a.caseId !== caseId; });
-    } else {
-      state.answers = state.answers.filter(function (a) { return a.caseId !== caseId; });
+  // перейти к кейсу: решённый — открываем сохранённый разбор, нерешённый — задание
+  function goToIndex(i) {
+    setActiveIndex(i);
+    var cases = activeCases();
+    if (i >= cases.length) {
+      if (state.mode === "review") renderReviewResult();
+      else finishTraining();
+      return;
     }
+    var c = cases[i];
+    var saved = getAnswerForCase(c.id);
+    if (saved) {
+      state.currentSelected = saved.selectedIndex;
+      state.answeredCurrent = true;
+      renderQuiz();
+      renderAnswerView(c, saved.selectedIndex);
+    } else {
+      state.currentSelected = -1;
+      state.answeredCurrent = false;
+      renderQuiz();
+    }
+  }
+
+  function getAnswerForCase(caseId) {
+    var arr = activeAnswers();
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].caseId === caseId) return arr[i];
+    }
+    return null;
   }
 
   function renderQuiz() {
@@ -1049,11 +1066,8 @@
     else nextLabel = isLast ? "Показать результаты" : "Следующий кейс";
     var next = el("button", "btn btn-primary", nextLabel);
     next.addEventListener("click", function () {
-      setActiveIndex(activeIndex() + 1);
-      state.currentSelected = -1;
-      state.answeredCurrent = false;
+      goToIndex(activeIndex() + 1);
       if (state.mode === "training") saveProgress();
-      renderQuiz();
     });
     var nextWrap = el("div", "panel-next");
     nextWrap.appendChild(next);
@@ -1119,10 +1133,12 @@
     return b;
   }
 
-  // результат: спокойный статус + блок ответов на нейтральной подложке
+  // результат: подпись «Ваш ответ» + спокойный статус + блок ответов
   function resultOfAnswer(correct, chosen, correctOpt) {
     var frag = document.createDocumentFragment();
-    frag.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Неверно"));
+    var box = el("div", "result-block");
+    box.appendChild(el("div", "result-caption", "Ваш ответ"));
+    box.appendChild(el("div", "verdict-line " + (correct ? "vd-correct" : "vd-wrong"), correct ? "Верно" : "Неверно"));
     var zone = el("div", "answers-zone");
     if (correct) {
       zone.appendChild(el("div", "chosen-text", chosen.text));
@@ -1132,7 +1148,8 @@
       list.appendChild(ansItem("Верный ответ", correctOpt.text, "primary"));
       zone.appendChild(list);
     }
-    frag.appendChild(zone);
+    box.appendChild(zone);
+    frag.appendChild(box);
     return frag;
   }
 
@@ -1143,14 +1160,14 @@
     return row;
   }
 
-  // разбор: «Что не так» / «Почему текст корректный»
+  // разбор: «Разбор исходного текста» / «Почему текст корректный»
   function messageEvaluation(c) {
     var frag = document.createDocumentFragment();
     var b = c.breakdown || {};
     var isOk = !!b.ok;
     var card = el("div", "explain-card");
     var head = el("div", "explain-head");
-    head.appendChild(el("div", "explain-title", isOk ? "Почему текст корректный" : "Что не так"));
+    head.appendChild(el("div", "explain-title", isOk ? "Почему текст корректный" : "Разбор исходного текста"));
     if (c.type) head.appendChild(el("span", "explain-cat", c.type));
     card.appendChild(head);
     card.appendChild(el("p", "explain-text", isOk ? b.ok : b.problem));
@@ -1170,12 +1187,7 @@
 
   // продолжить незавершённую тренировку
   function continueTraining() {
-    if (state.answeredCurrent && state.currentSelected >= 0 && state.index < CASES.length) {
-      renderQuiz();
-      renderAnswerView(currentCase(), state.currentSelected);
-    } else {
-      renderQuiz();
-    }
+    goToIndex(state.index);
   }
 
   // подсветка проблемной фразы прямо в рендеренном телефоне
@@ -1365,6 +1377,8 @@
     state.reviewCases = CASES.filter(function (c) { return wrongIds.indexOf(c.id) >= 0; });
     state.reviewIndex = 0;
     state.reviewAnswers = [];
+    state.currentSelected = -1;
+    state.answeredCurrent = false;
     track("review_start", { count: state.reviewCases.length });
     renderQuiz();
   }
@@ -1401,6 +1415,8 @@
         state.reviewCases = stillWrong;
         state.reviewIndex = 0;
         state.reviewAnswers = [];
+        state.currentSelected = -1;
+        state.answeredCurrent = false;
         renderQuiz();
       });
       actions.appendChild(again);
