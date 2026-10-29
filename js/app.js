@@ -1119,8 +1119,6 @@
     var sd = showFixed ? c.breakdown.example : c.screen;
     var fmt = sd.format || c.screen.format || "landing";
     var frame = caseFrame(sd);
-    if (showFixed) applyHighlight(frame, sd.highlight, "hl-mint");
-    else applyHighlight(frame, c.screen && c.screen.highlight, "hl");
     phoneCol.appendChild(frame);
     // переключатель «Было / Стало» — под телефоном, в той же колонке
     if (c.breakdown && c.breakdown.example) {
@@ -1221,35 +1219,6 @@
   // продолжить незавершённую тренировку
   function continueTraining() {
     goToIndex(state.index);
-  }
-
-  // подсветка проблемных фраз прямо в рендеренном телефоне (строка или массив)
-  function escapeRegExp(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-  function applyHighlight(root, phrases, cls) {
-    if (!root || !phrases) return;
-    var list = Array.isArray(phrases) ? phrases : [phrases];
-    list.forEach(function (phrase) {
-      if (!phrase) return;
-      var parts = String(phrase).split(/\s+/).map(escapeRegExp);
-      var re = new RegExp(parts.join("\\s+"), "i");
-      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-      var n;
-      while ((n = walker.nextNode())) {
-        var m = n.nodeValue.match(re);
-        if (m && m.index >= 0) {
-          var mark = document.createElement("mark");
-          mark.className = cls || "hl";
-          mark.textContent = m[0];
-          var before = document.createTextNode(n.nodeValue.slice(0, m.index));
-          n.nodeValue = n.nodeValue.slice(m.index + m[0].length);
-          n.parentNode.insertBefore(mark, n);
-          n.parentNode.insertBefore(before, mark);
-          break;
-        }
-      }
-    });
   }
 
   function buildProgress(index, total, isReview) {
