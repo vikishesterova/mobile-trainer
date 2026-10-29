@@ -1577,7 +1577,7 @@
       ta.disabled = true;
       var ratings = q1.querySelectorAll(".rating-btn");
       ratings.forEach(function (button) { button.disabled = true; });
-      sendSurveyToSheet(state.survey)
+      sendSurveyToSheet(state.survey, function () { submit.textContent = "Проверяем сохранение…"; })
         .then(function () {
           track("survey_submit", { rating: state.survey.rating, hasComment: !!state.survey.comment.trim() });
           clearSurveyDraft();
@@ -1591,7 +1591,7 @@
           ta.disabled = false;
           ratings.forEach(function (button) { button.disabled = false; });
           error.textContent = (err.userMessage || "Не удалось отправить отзыв. Попробуйте еще раз.") +
-            (saveSurveyDraft(state.survey) ? " Отзыв сохранен на этом устройстве." : " Текст остался в форме.");
+            (saveSurveyDraft(state.survey) ? " Текст сохранен на этом устройстве." : " Текст остался в форме.");
           error.hidden = false;
           track("survey_submit_error");
         });
@@ -1652,61 +1652,17 @@
     try { window.localStorage.removeItem(SURVEY_DRAFT_KEY); } catch (err) {}
   }
 
-  // Завершаем ожидание своим таймером, даже если fetch не реагирует на abort.
-  // Таймер охватывает и чтение тела ответа, а не только получение заголовков.
-  function surveyRequest(operation, timeout) {
-    return new Promise(function (resolve, reject) {
-      var controller = typeof AbortController === "function" ? new AbortController() : null;
-      var finished = false;
-      var timer = setTimeout(function () {
-        if (finished) return;
-        finished = true;
-        var err = new Error("Feedback request timed out");
-        err.userMessage = "Сервис отзывов не ответил вовремя. Попробуйте еще раз.";
-        reject(err);
-        if (controller) { try { controller.abort(); } catch (ignored) {} }
-      }, timeout);
-      Promise.resolve().then(function () {
-        return operation(controller ? controller.signal : undefined);
-      }).then(function (result) {
-        if (finished) return;
-        finished = true;
-        clearTimeout(timer);
-        resolve(result);
-      }, function (err) {
-        if (finished) return;
-        finished = true;
-        clearTimeout(timer);
-        reject(err);
-      });
-    });
-  }
-
-  // Сервер возвращает ok после надежного сохранения отзыва у себя.
-  // Google Таблица обновляется в фоне; дата при повторе защищает от дублей.
-  function sendSurveyToSheet(survey) {
-    if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
+  // Подтверждаем сохранение на сервере; при потере ответа проверяем
+  // точную запись в Google. Повторную запись в Google не отправляем.
+  function sendSurveyToSheet(survey, onVerifying) {
     var payload = survey.delivery;
     if (!payload || payload.rating !== survey.rating || payload.comment !== (survey.comment || "") || !isFinite(new Date(payload.date).getTime())) {
       payload = { date: new Date().toISOString(), rating: survey.rating, comment: survey.comment || "" };
       survey.delivery = payload;
     }
     saveSurveyDraft(survey);
-    return surveyRequest(function (signal) {
-      return fetch(SURVEY_ENDPOINT, {
-        method: "POST", mode: "cors", redirect: "follow", credentials: "omit", signal: signal,
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ date: payload.date, rating: payload.rating, comment: payload.comment })
-      }).then(function (response) {
-        return response.text().then(function (text) {
-          if (response.ok && text.trim() === "ok") return;
-          var err = new Error("Feedback was not confirmed");
-          if (response.status === 403) err.userMessage = "Сервис отзывов не принял запрос с этой страницы. Откройте актуальную версию тренажера и попробуйте еще раз.";
-          try { var data = JSON.parse(text); if (data && typeof data.error === "string") err.userMessage = data.error; } catch (ignored) {}
-          throw err;
-        });
-      });
-    }, 45000);
+    if (!window.FeedbackAPI) return Promise.reject(new Error("Feedback script unavailable"));
+    return window.FeedbackAPI.submit(payload, { endpoint: SURVEY_ENDPOINT, onVerifying: onVerifying });
   }
 
   // ============================================================================
@@ -1796,3 +1752,4 @@
   if (new URLSearchParams(window.location.search).get("feedback") === "1") renderSurvey();
   else renderIntro();
 })();
+
