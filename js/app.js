@@ -1361,6 +1361,21 @@
     panel.appendChild(score);
 
     var wrong = state.answers.filter(function (a) { return !a.correct; });
+    if (!wrong.length) panel.appendChild(el("p", "final-perfect", "Все ответы верные"));
+
+    var feedback = el("div", "final-feedback");
+    var art = el("div", "final-feedback-art");
+    art.setAttribute("aria-hidden", "true");
+    art.innerHTML = '<svg viewBox="0 0 100 76" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="13" width="67" height="51" rx="9" fill="#fff" transform="rotate(-9 45 38)"/><path d="M27 32l23-4M29 42l17-3M31 52l12-2" fill="none" stroke="#d0c2ee" stroke-width="4" stroke-linecap="round"/><path d="M64 11l10 6-23 36-12 4 1-12z" fill="#9273d8"/><path d="M40 45l11 8-12 4z" fill="#6548ab"/><path d="M82 9l2-5M90 19l5-2" stroke="#c6b3ef" stroke-width="3" stroke-linecap="round"/></svg>';
+    feedback.appendChild(art);
+    var feedbackBody = el("div", "final-feedback-body");
+    feedbackBody.appendChild(el("p", "final-feedback-text", "Поставьте оценку тренажеру"));
+    var survey = el("button", "btn btn-ghost final-feedback-button", "Оценить");
+    survey.addEventListener("click", renderSurvey);
+    feedbackBody.appendChild(survey);
+    feedback.appendChild(feedbackBody);
+    panel.appendChild(feedback);
+
     if (wrong.length > 0) {
       var section = el("section", "final-mistakes");
       section.appendChild(el("h2", "final-section-title", "Задания с ошибками"));
@@ -1375,22 +1390,7 @@
       });
       section.appendChild(list);
       panel.appendChild(section);
-    } else {
-      panel.appendChild(el("p", "final-perfect", "Все ответы верные"));
     }
-
-    var feedback = el("div", "final-feedback");
-    var art = el("div", "final-feedback-art");
-    art.setAttribute("aria-hidden", "true");
-    art.innerHTML = '<svg viewBox="0 0 100 76" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="13" width="67" height="51" rx="9" fill="#fff" transform="rotate(-9 45 38)"/><path d="M27 32l23-4M29 42l17-3M31 52l12-2" fill="none" stroke="#d0c2ee" stroke-width="4" stroke-linecap="round"/><path d="M64 11l10 6-23 36-12 4 1-12z" fill="#9273d8"/><path d="M40 45l11 8-12 4z" fill="#6548ab"/><path d="M82 9l2-5M90 19l5-2" stroke="#c6b3ef" stroke-width="3" stroke-linecap="round"/></svg>';
-    feedback.appendChild(art);
-    var feedbackBody = el("div", "final-feedback-body");
-    feedbackBody.appendChild(el("p", "final-feedback-text", "Поставьте оценку тренажеру"));
-    var survey = el("button", "btn btn-ghost final-feedback-button", "Оценить");
-    survey.addEventListener("click", renderSurvey);
-    feedbackBody.appendChild(survey);
-    feedback.appendChild(feedbackBody);
-    panel.appendChild(feedback);
 
     var restart = el("button", "final-restart", "Пройти заново");
     restart.addEventListener("click", startFresh);
