@@ -1333,6 +1333,14 @@
   // ============================================================================
   // 3. Результаты
   // ============================================================================
+  function taskCount(count) {
+    var lastTwo = count % 100;
+    var last = count % 10;
+    var word = lastTwo >= 11 && lastTwo <= 14 ? "заданий" :
+      last === 1 ? "задание" : last >= 2 && last <= 4 ? "задания" : "заданий";
+    return count + " " + word;
+  }
+
   function renderResults() {
     state.currentCaseId = null;
     var total = CASES.length;
@@ -1344,54 +1352,49 @@
     saveProgress();
 
     var wrap = el("div", "screen");
-    var panel = el("div", "results-panel");
+    var panel = el("div", "results-panel final-results");
+    panel.appendChild(el("h1", "final-title", "Вы прошли тренажер"));
 
-    // верх: заголовок слева, число справа
-    var top = el("div", "results-top");
-    var left = el("div", "results-top-left");
-    left.appendChild(el("h1", "results-title", resultsTitle(pct)));
-    left.appendChild(el("p", "results-lead", resultsLead(pct)));
-    top.appendChild(left);
-    var score = el("div", "results-score");
-    score.appendChild(el("span", "results-num", correct + " / " + total));
-    score.appendChild(el("span", "results-pct", pct + "%"));
-    top.appendChild(score);
-    panel.appendChild(top);
+    var score = el("div", "final-score");
+    score.appendChild(el("div", "final-score-number", correct + " из " + total));
+    score.appendChild(el("div", "final-score-label", "верных ответов"));
+    panel.appendChild(score);
 
     var wrong = state.answers.filter(function (a) { return !a.correct; });
-    var actions = el("div", "results-actions");
-
     if (wrong.length > 0) {
-      // основное действие — повторение ошибок
-      var rep = el("button", "btn btn-primary btn-md", "Повторить ошибки (" + wrong.length + ")");
-      rep.addEventListener("click", startReview);
-      actions.appendChild(rep);
-      var survey = el("button", "btn btn-ghost btn-md", "Оценить тренажер");
-      survey.addEventListener("click", renderSurvey);
-      actions.appendChild(survey);
-    } else {
-      var survey0 = el("button", "btn btn-primary btn-md", "Оценить тренажер");
-      survey0.addEventListener("click", renderSurvey);
-      actions.appendChild(survey0);
-    }
-    var restart = el("button", "btn btn-ghost btn-md", "Пройти заново");
-    restart.addEventListener("click", startFresh);
-    actions.appendChild(restart);
-    panel.appendChild(actions);
-
-    // кейсы с неверными ответами (открытие разбора)
-    if (wrong.length > 0) {
-      var listWrap = el("div", "mistakes-section");
-      listWrap.appendChild(el("h2", "mistakes-title", "Задания для повторения"));
-      var list = el("div", "mistakes-list");
-      wrong.forEach(function (a) {
-        var item = CASES.filter(function (c) { return c.id === a.caseId; })[0];
-        if (item) list.appendChild(mistakeRow(item, a));
+      var section = el("section", "final-mistakes");
+      section.appendChild(el("h2", "final-section-title", "Задания с ошибками"));
+      section.appendChild(el("p", "final-hint", "Откройте задание, чтобы посмотреть разбор"));
+      var repeat = el("button", "btn btn-primary final-repeat", "Повторить " + taskCount(wrong.length));
+      repeat.addEventListener("click", startReview);
+      section.appendChild(repeat);
+      var list = el("div", "final-mistakes-list");
+      wrong.forEach(function (answer) {
+        var item = CASES.filter(function (c) { return c.id === answer.caseId; })[0];
+        if (item) list.appendChild(mistakeRow(item, answer));
       });
-      listWrap.appendChild(list);
-      panel.appendChild(listWrap);
+      section.appendChild(list);
+      panel.appendChild(section);
+    } else {
+      panel.appendChild(el("p", "final-perfect", "Все ответы верные"));
     }
 
+    var feedback = el("div", "final-feedback");
+    var art = el("div", "final-feedback-art");
+    art.setAttribute("aria-hidden", "true");
+    art.innerHTML = '<svg viewBox="0 0 100 76" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="13" width="67" height="51" rx="9" fill="#fff" transform="rotate(-9 45 38)"/><path d="M27 32l23-4M29 42l17-3M31 52l12-2" fill="none" stroke="#d0c2ee" stroke-width="4" stroke-linecap="round"/><path d="M64 11l10 6-23 36-12 4 1-12z" fill="#9273d8"/><path d="M40 45l11 8-12 4z" fill="#6548ab"/><path d="M82 9l2-5M90 19l5-2" stroke="#c6b3ef" stroke-width="3" stroke-linecap="round"/></svg>';
+    feedback.appendChild(art);
+    var feedbackBody = el("div", "final-feedback-body");
+    feedbackBody.appendChild(el("p", "final-feedback-text", "Поставьте оценку тренажеру"));
+    var survey = el("button", "btn btn-ghost final-feedback-button", "Оценить");
+    survey.addEventListener("click", renderSurvey);
+    feedbackBody.appendChild(survey);
+    feedback.appendChild(feedbackBody);
+    panel.appendChild(feedback);
+
+    var restart = el("button", "final-restart", "Пройти заново");
+    restart.addEventListener("click", startFresh);
+    panel.appendChild(restart);
     wrap.appendChild(panel);
     render(wrap);
   }
@@ -1465,10 +1468,9 @@
   function mistakeRow(item, answer) {
     var row = el("div", "mistake-row");
     var head = el("button", "mistake-head");
-    head.appendChild(el("span", "mistake-dot"));
     head.appendChild(el("span", "mistake-name", item.title));
-    head.appendChild(el("span", "mistake-type", item.type || ""));
     head.appendChild(el("span", "mistake-caret", "▾"));
+    head.setAttribute("aria-expanded", "false");
     row.appendChild(head);
 
     var body = el("div", "mistake-body");
@@ -1494,6 +1496,7 @@
       var open = body.style.display !== "none";
       body.style.display = open ? "none" : "block";
       head.classList.toggle("open", !open);
+      head.setAttribute("aria-expanded", String(!open));
     });
     return row;
   }

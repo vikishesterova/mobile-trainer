@@ -2450,3 +2450,37 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
   .feedback-banner{font-size:13.5px;padding:8px 12px;gap:10px}
   .feedback-float{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:10px 14px}
 }
+
+/* Итоги основного прохождения */
+.final-results { max-width: 760px; padding: 34px 38px; }
+.final-title { margin: 0 0 20px; text-align: center; font-size: 30px; line-height: 1.25; font-weight: 700; color: #292633; }
+.final-score { padding: 24px 16px; border-radius: 16px; background: #f1edfb; text-align: center; }
+.final-score-number { font-size: 42px; line-height: 1.1; font-weight: 700; color: #7151ad; }
+.final-score-label { margin-top: 6px; color: #292633; font-size: 16px; font-weight: 600; }
+.final-mistakes { border-top: 1px solid #e6e0ef; margin-top: 22px; padding-top: 20px; }
+.final-section-title { margin: 0 0 4px; font-size: 22px; line-height: 1.3; font-weight: 700; color: #292633; }
+.final-hint { margin: 0 0 16px; color: #686273; font-size: 15px; line-height: 1.5; }
+.final-repeat { min-height: 48px; padding: 12px 16px; border-radius: 12px; }
+.final-mistakes-list { margin-top: 12px; }
+.final-mistakes-list .mistake-row { margin-bottom: 8px; border-color: #ded6e9; }
+.final-mistakes-list .mistake-head { min-height: 48px; padding: 12px 16px; }
+.final-mistakes-list .mistake-name { font-weight: 600; line-height: 1.35; }
+.final-mistakes-list .mistake-body { padding: 0 16px 18px; }
+.final-perfect { margin: 20px 0 0; text-align: center; color: #397a52; font-weight: 600; }
+.final-feedback { display: flex; align-items: center; gap: 20px; margin-top: 22px; padding: 18px 22px; border-radius: 14px; background: #eaf2fc; }
+.final-feedback-art { width: 82px; flex: 0 0 82px; }
+.final-feedback-art svg { width: 100%; display: block; }
+.final-feedback-body { min-width: 0; }
+.final-feedback-text { margin: 0 0 12px; color: #292633; font-size: 16px; line-height: 1.4; }
+.final-results .final-feedback-button { width: auto; min-width: 150px; min-height: 42px; margin: 0; padding: 10px 18px; border: 1px solid #7151ad; border-radius: 10px; background: transparent; color: #7151ad; font-size: 15px; font-weight: 600; }
+.final-results .final-feedback-button:hover { background: #f3eef9; color: #5f3f96; }
+.final-restart { display: block; margin: 20px auto 0; padding: 10px 16px; border: 0; background: transparent; color: #7151ad; font: 600 15px var(--font); cursor: pointer; }
+.final-restart:hover { color: #5f3f96; }
+@media (max-width: 700px) {
+  .final-results { padding: 24px 18px; }
+  .final-title { font-size: 25px; }
+  .final-score-number { font-size: 36px; }
+  .final-feedback { gap: 12px; padding: 16px; }
+  .final-feedback-art { width: 64px; flex-basis: 64px; }
+  .final-results .final-feedback-button { min-width: 130px; }
+}
