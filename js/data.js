@@ -50,6 +50,9 @@ const DEFAULT_QUESTION = "Какое ожидание сформируется �
 // Браузер обращается к этому адресу без прямого запроса к Google.
 const SURVEY_ENDPOINT = "https://feedback.michellegreenrlg81.chatgpt.site/api/feedback";
 
+// Сервис сбора отзывов тестовой группы — открывается в новой вкладке.
+const FEEDBACK_URL = "https://feedback-service.dev.t-tech.team/";
+
 const CASES = [
   // --------------------------------------------------------------------------
   {

@@ -18,6 +18,7 @@
     reviewIndex: 0,
     reviewAnswers: [],
     survey: null,
+    currentCaseId: null,       // id текущего кейса — для контекста в кнопке «Отзыв»
   };
 
   // --- утилиты -------------------------------------------------------------------
@@ -54,6 +55,11 @@
   function render(node) {
     app.innerHTML = "";
     app.appendChild(node);
+    // держим кнопку «Отзыв» в синхроне с текущим кейсом
+    if (fbFloat) {
+      var href = FEEDBACK_URL + (state.currentCaseId ? ("?case=" + state.currentCaseId) : "");
+      if (fbFloat.getAttribute("href") !== href) fbFloat.setAttribute("href", href);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -748,6 +754,7 @@
   // 1. Интро
   // ============================================================================
   function renderIntro() {
+    state.currentCaseId = null;
     var wrap = el("div", "screen layout");
 
     // Обложка внутри телефона (статичная, без кнопок)
@@ -797,7 +804,13 @@
     renderIntroActions(panel);
 
     wrap.appendChild(panel);
-    render(wrap);
+
+    // верхняя плашка обратной связи — над двухколоночной композицией
+    var screen = el("div", "screen");
+    var banner = buildFeedbackBanner();
+    if (banner) screen.appendChild(banner);
+    screen.appendChild(wrap);
+    render(screen);
   }
 
   function renderIntroActions(panel) {
@@ -987,6 +1000,7 @@
 
     track("case_view", { index: idx + 1, mode: state.mode });
     var c = cases[idx];
+    state.currentCaseId = c.id;
     var wrap = el("div", "screen layout");
 
     // телефон с предложением
@@ -1320,6 +1334,7 @@
   // 3. Результаты
   // ============================================================================
   function renderResults() {
+    state.currentCaseId = null;
     var total = CASES.length;
     var correct = correctCount();
     var pct = Math.round(correct / total * 100);
@@ -1396,6 +1411,7 @@
   }
 
   function renderReviewResult() {
+    state.currentCaseId = null;
     var total = state.reviewCases.length || 0;
     var correct = state.reviewAnswers.filter(function (a) { return a.correct; }).length;
     var pct = total ? Math.round(correct / total * 100) : 0;
@@ -1709,6 +1725,69 @@
     wrap.appendChild(panel);
     render(wrap);
   }
+
+  // ============================================================================
+  // Обратная связь: верхняя плашка на онбординге + плавающая кнопка «Отзыв»
+  // ============================================================================
+  function feedbackBannerIcon() {
+    return '<svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true">' +
+      '<path d="M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-4 3v-3H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>' +
+      '<circle cx="8" cy="11.5" r="1.3" fill="#7151ad"/>' +
+      '<circle cx="12" cy="11.5" r="1.3" fill="#7151ad"/>' +
+      '<circle cx="16" cy="11.5" r="1.3" fill="#7151ad"/></svg>';
+  }
+
+  function buildFeedbackBanner() {
+    if (!FEEDBACK_URL) return null;
+    var b = document.createElement("div");
+    b.className = "feedback-banner";
+
+    var ico = document.createElement("span");
+    ico.className = "feedback-banner-ico";
+    ico.innerHTML = feedbackBannerIcon();
+    b.appendChild(ico);
+
+    var text = document.createElement("span");
+    text.className = "feedback-banner-text";
+    text.appendChild(document.createTextNode("Привет! Тренажер пока в тестовом режиме. Оставить отзыв можно по кнопке «Отзыв» внизу экрана или "));
+
+    var link = document.createElement("a");
+    link.className = "feedback-banner-link";
+    link.href = FEEDBACK_URL;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "по ссылке";
+    link.addEventListener("click", function () { track("feedback_banner_link"); });
+    text.appendChild(link);
+
+    text.appendChild(document.createTextNode(". Если что-то сломалось — пиши в Тайм: "));
+
+    // URL контакта Тайма не подтверждён (доступен только хэндл @v.shesterova),
+    // поэтому оформляем как ссылку, но оставляем текстом.
+    var contact = document.createElement("span");
+    contact.className = "feedback-banner-contact";
+    contact.textContent = "v.shesterova";
+    text.appendChild(contact);
+
+    b.appendChild(text);
+    return b;
+  }
+
+  function buildFeedbackFloat() {
+    if (!FEEDBACK_URL) return null;
+    var btn = document.createElement("a");
+    btn.className = "feedback-float";
+    btn.href = FEEDBACK_URL;
+    btn.target = "_blank";
+    btn.rel = "noopener";
+    btn.setAttribute("aria-label", "Оставить отзыв");
+    btn.innerHTML = feedbackBannerIcon() + '<span>Отзыв</span>';
+    btn.addEventListener("click", function () { track("feedback_float_open"); });
+    return btn;
+  }
+
+  var fbFloat = buildFeedbackFloat();
+  if (fbFloat) document.body.appendChild(fbFloat);
 
   // --- запуск --------------------------------------------------------------------
   if (new URLSearchParams(window.location.search).get("feedback") === "1") renderSurvey();
