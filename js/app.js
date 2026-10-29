@@ -758,7 +758,7 @@
     cards.appendChild(coverCard("Письмо", "off2"));
     cards.appendChild(coverCard("Баннер", "off3"));
     cover.appendChild(cards);
-    cover.appendChild(el("div", "cover-hint", "В заданиях можно нажимать на кнопки и смотреть, что происходит дальше"));
+    cover.appendChild(el("div", "cover-hint", "В заданиях можно нажимать кнопки и смотреть, что происходит дальше"));
 
     var left = el("div", "intro-phone");
     left.appendChild(phoneFrame(cover, false));
@@ -791,7 +791,7 @@
     panel.appendChild(stepsBlock);
 
     // Подпись, счётчик, кнопка
-    panel.appendChild(el("div", "intro-note", "Тексты и интерфейсы в заданиях условные"));
+    panel.appendChild(el("div", "intro-note", "Тексты и интерфейсы в заданиях учебные и не связаны с компанией"));
 
     // действия — зависят от сохранённого прогресса
     renderIntroActions(panel);
