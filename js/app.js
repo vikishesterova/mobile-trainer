@@ -1602,7 +1602,7 @@
           back.disabled = false;
           ta.disabled = false;
           ratings.forEach(function (button) { button.disabled = false; });
-          error.textContent = (err.userMessage || "Не удалось подтвердить запись в Google Таблице. Попробуйте еще раз.") +
+          error.textContent = (err.userMessage || "Не удалось отправить отзыв. Попробуйте еще раз.") +
             (saveSurveyDraft(state.survey) ? " Отзыв сохранен на этом устройстве." : " Текст остался в форме.");
           error.hidden = false;
           track("survey_submit_error");
@@ -1694,8 +1694,8 @@
     });
   }
 
-  // Сервер возвращает ok только после проверки строки в Google Таблице.
-  // Дата сохраняется при повторе, чтобы сервер мог найти уже записанный отзыв.
+  // Сервер возвращает ok после надежного сохранения отзыва у себя.
+  // Google Таблица обновляется в фоне; дата при повторе защищает от дублей.
   function sendSurveyToSheet(survey) {
     if (!SURVEY_ENDPOINT) return Promise.reject(new Error("Feedback endpoint is missing"));
     var payload = survey.delivery;
@@ -1713,6 +1713,7 @@
         return response.text().then(function (text) {
           if (response.ok && text.trim() === "ok") return;
           var err = new Error("Feedback was not confirmed");
+          if (response.status === 403) err.userMessage = "Сервис отзывов не принял запрос с этой страницы. Откройте актуальную версию тренажера и попробуйте еще раз.";
           try { var data = JSON.parse(text); if (data && typeof data.error === "string") err.userMessage = data.error; } catch (ignored) {}
           throw err;
         });
