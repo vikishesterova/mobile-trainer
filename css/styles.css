@@ -2487,3 +2487,13 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
 
 /* Плашка оценки на итоговом экране */
 .final-feedback-title { margin: 0 0 6px; color: #292633; font-size: 17px; line-height: 1.35; font-weight: 700; }
+
+/* Категории: спокойный акцент с читаемым контрастом */
+.eval-title { color: #513b78; font-weight: 600; min-width: 0; overflow-wrap: break-word; }
+.explain-head, .breakdown-head { flex-wrap: wrap; }
+.explain-cat, .breakdown-type {
+  display: inline-block; max-width: 100%; padding: 4px 10px;
+  border-radius: 999px; background: #e9e2f5; color: #5a4287;
+  font-size: 12px; font-weight: 600; line-height: 1.4;
+  overflow-wrap: break-word;
+}

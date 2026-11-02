@@ -35,7 +35,7 @@
     var previous;
     do {
       previous = s;
-      s = s.replace(/(^|\s)(в|во|к|ко|с|со|о|об|обо|у|за|на|до|по|из|от|без|для|при|про|под|над|перед|через|между|но|и|а|не)[ \t]+(?=\S)/gi, "$1$2\u00A0");
+      s = s.replace(/(^|[\s«„(])(в|во|к|ко|с|со|о|об|у|за|на|до|по|из|от|но|и|а|не|же|ли|бы)[ \t]+(?=\S)/gi, "$1$2\u00A0");
     } while (s !== previous);
     return s;
   }
@@ -886,7 +886,7 @@
     lines.forEach(function (line, i) {
       var isBullet = /^\s*—/.test(line);
       var el2 = el("div", isBullet ? "eval-line bullet" : "eval-line");
-      el2.textContent = line.trim();
+      el2.textContent = nbspJoin(line.trim());
       if (isBullet) el2.classList.add("eval-bullet");
       body.appendChild(el2);
     });
@@ -1085,7 +1085,7 @@
       viewMode = m;
       renderAnswerPhone(phoneCol, c, m, setViewMode);
       if (viewBtn) {
-        viewBtn.textContent = m === "fixed" ? "Посмотреть, как было" : "Посмотреть исправленный текст";
+        viewBtn.textContent = nbspJoin(m === "fixed" ? "Посмотреть, как было" : "Посмотреть исправленный текст");
       }
     }
 
@@ -1717,7 +1717,7 @@
     link.href = FEEDBACK_URL;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = "по ссылке";
+    link.textContent = nbspJoin("по ссылке");
     link.addEventListener("click", function () { track("feedback_banner_link"); });
     text.appendChild(link);
 
