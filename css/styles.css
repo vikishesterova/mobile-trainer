@@ -70,7 +70,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   gap: 40px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* ============================================================================
@@ -2056,9 +2056,12 @@ body {
    Экраны заданий и разборов — компактнее
    ============================================================================ */
 /* телефон подстраивается под высоту окна, сохраняя пропорции */
-.phone { width: auto; height: min(660px, calc(100vh - 96px)); aspect-ratio: 330 / 640; }
+.phone { width: auto; height: min(660px, calc(100vh - 96px), calc(193.939vw - 54.303px)); aspect-ratio: 330 / 640; }
 /* закрепляется весь блок: телефон + переключатель «Было/Стало» держатся вместе */
 .case-phone { position: sticky; top: 16px; }
+@media (max-width: 860px) {
+  .case-phone { position: static; }
+}
 
 /* меньше декоративная иллюстрация внутри телефона */
 .illust { height: 90px; font-size: 40px; }
