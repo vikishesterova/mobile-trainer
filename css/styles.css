@@ -2484,3 +2484,6 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
   .final-feedback-art { width: 64px; flex-basis: 64px; }
   .final-results .final-feedback-button { min-width: 130px; }
 }
+
+/* Плашка оценки на итоговом экране */
+.final-feedback-title { margin: 0 0 6px; color: #292633; font-size: 17px; line-height: 1.35; font-weight: 700; }

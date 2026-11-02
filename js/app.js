@@ -57,6 +57,7 @@
     app.appendChild(node);
     // держим кнопку «Отзыв» в синхроне с текущим кейсом
     if (fbFloat) {
+      fbFloat.style.display = node.querySelector(".final-results") ? "none" : "";
       var href = FEEDBACK_URL + (state.currentCaseId ? ("?case=" + state.currentCaseId) : "");
       if (fbFloat.getAttribute("href") !== href) fbFloat.setAttribute("href", href);
     }
@@ -1369,8 +1370,9 @@
     art.innerHTML = '<svg viewBox="0 0 100 76" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="13" width="67" height="51" rx="9" fill="#fff" transform="rotate(-9 45 38)"/><path d="M27 32l23-4M29 42l17-3M31 52l12-2" fill="none" stroke="#d0c2ee" stroke-width="4" stroke-linecap="round"/><path d="M64 11l10 6-23 36-12 4 1-12z" fill="#9273d8"/><path d="M40 45l11 8-12 4z" fill="#6548ab"/><path d="M82 9l2-5M90 19l5-2" stroke="#c6b3ef" stroke-width="3" stroke-linecap="round"/></svg>';
     feedback.appendChild(art);
     var feedbackBody = el("div", "final-feedback-body");
-    feedbackBody.appendChild(el("p", "final-feedback-text", "Поставьте оценку тренажеру"));
-    var survey = el("button", "btn btn-ghost final-feedback-button", "Оценить");
+    feedbackBody.appendChild(el("h2", "final-feedback-title", "Оцените тренажер"));
+    feedbackBody.appendChild(el("p", "final-feedback-text", "Будем рады обратной связи: расскажите, что понравилось, а что можно улучшить"));
+    var survey = el("button", "btn btn-ghost final-feedback-button", "Поделиться");
     survey.addEventListener("click", renderSurvey);
     feedbackBody.appendChild(survey);
     feedback.appendChild(feedbackBody);
