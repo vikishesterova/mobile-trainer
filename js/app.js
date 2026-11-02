@@ -1018,7 +1018,7 @@
     track("case_view", { index: idx + 1, mode: state.mode });
     var c = cases[idx];
     state.currentCaseId = c.id;
-    var wrap = el("div", "screen layout");
+    var wrap = el("div", "screen layout quiz-layout");
 
     // телефон с предложением
     var phoneCol = el("div", "case-phone");

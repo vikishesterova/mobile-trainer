@@ -2476,6 +2476,20 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
 .final-results .final-feedback-button:hover { background: #f3eef9; color: #5f3f96; }
 .final-restart { display: block; margin: 20px auto 0; padding: 10px 16px; border: 0; background: transparent; color: #7151ad; font: 600 15px var(--font); cursor: pointer; }
 .final-restart:hover { color: #5f3f96; }
+/* Умеренная ширина: сохраняем удобное место для задания рядом с примером. */
+@media (min-width: 701px) and (max-width: 1000px) {
+  .quiz-layout { flex-direction: row; flex-wrap: nowrap; align-items: flex-start; gap: 24px; }
+  .quiz-layout .case-phone { position: sticky; top: 16px; flex: 0 0 35%; width: 35%; min-width: 0; }
+  .quiz-layout .phone { width: min(100%, 330px, calc(51.5625vh - 70px)); height: auto; aspect-ratio: 330 / 640; }
+  .quiz-layout .island { width: 36%; max-width: 118px; }
+  .quiz-layout .app-statusbar { padding-left: 16px; padding-right: 16px; font-size: 12px; }
+  .quiz-layout .panel { flex: 1 1 0; width: auto; min-width: 0; max-width: 560px; }
+}
+/* В колонке телефон прокручивается вместе со страницей и не закрывает задание. */
+@media (max-width: 700px) {
+  .quiz-layout .case-phone { position: static; }
+  .quiz-layout .phone { width: min(330px, calc(100vw - 28px), calc(51.5625vh - 49.5px)); height: auto; aspect-ratio: 330 / 640; }
+}
 @media (max-width: 700px) {
   .final-results { padding: 24px 18px; }
   .final-title { font-size: 25px; }
