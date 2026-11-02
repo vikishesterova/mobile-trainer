@@ -17,6 +17,7 @@
     reviewCases: [],           // кейсы для повторения ошибок
     reviewIndex: 0,
     reviewAnswers: [],
+    correctedCaseIds: [],      // задания, исправленные при повторении
     survey: null,
     currentCaseId: null,       // id текущего кейса — для контекста в кнопке «Отзыв»
   };
@@ -83,6 +84,16 @@
     return state.answers.filter(function (a) { return a.correct; }).length;
   }
 
+  function remainingWrongAnswers() {
+    return state.answers.filter(function (a) {
+      return !a.correct && state.correctedCaseIds.indexOf(a.caseId) === -1;
+    });
+  }
+
+  function currentCorrectCount() {
+    return state.answers.length - remainingWrongAnswers().length;
+  }
+
   // ============================================================================
   // Сохранение прогресса в текущем браузере (localStorage)
   // ============================================================================
@@ -108,6 +119,7 @@
     state.reviewCases = [];
     state.reviewIndex = 0;
     state.reviewAnswers = [];
+    state.correctedCaseIds = [];
   }
 
   function hasProgress() {
@@ -121,6 +133,7 @@
         ids: CASES.map(function (c) { return c.id; }),
         index: state.index,
         answers: state.answers,
+        correctedCaseIds: state.correctedCaseIds,
         answeredCurrent: state.answeredCurrent,
         finishedResult: state.finishedResult
       }));
@@ -151,6 +164,9 @@
     state.answers = data.answers.filter(function (a) {
       return a && typeof a.caseId === "number" && a.caseId >= 0 &&
         CASES.some(function (c) { return c.id === a.caseId; });
+    });
+    state.correctedCaseIds = (Array.isArray(data.correctedCaseIds) ? data.correctedCaseIds : []).filter(function (id, index, ids) {
+      return ids.indexOf(id) === index && state.answers.some(function (a) { return a.caseId === id && !a.correct; });
     });
     state.answeredCurrent = !!data.answeredCurrent && state.answers.length > 0;
     state.currentSelected = state.answeredCurrent
@@ -833,7 +849,7 @@
       actions.appendChild(btnPrimary("К результатам", renderResults));
       actions.appendChild(btnGhost("Начать заново", startFresh));
       panel.appendChild(actions);
-      panel.appendChild(el("div", "intro-count", "Результат: " + state.finishedResult.correct + " из " + state.finishedResult.total));
+      panel.appendChild(el("div", "intro-count", "Результат: " + currentCorrectCount() + " из " + state.finishedResult.total));
       return;
     }
 
@@ -1047,8 +1063,13 @@
     // на случай повторного ответа после «Назад» — на кейс приходится ровно один ответ
     var arr = activeAnswers().filter(function (a) { return a.caseId !== c.id; });
     arr.push({ caseId: c.id, selectedIndex: idx, correct: c.options[idx].isCorrect });
-    if (state.mode === "review") state.reviewAnswers = arr; else state.answers = arr;
-    if (state.mode === "training") saveProgress();
+    if (state.mode === "review") {
+      state.reviewAnswers = arr;
+      if (c.options[idx].isCorrect && state.correctedCaseIds.indexOf(c.id) === -1 && state.answers.some(function (a) { return a.caseId === c.id && !a.correct; })) {
+        state.correctedCaseIds.push(c.id);
+      }
+    } else state.answers = arr;
+    saveProgress();
     track(c.options[idx].isCorrect ? "answer_correct" : "answer_wrong",
       { caseId: c.id, index: activeIndex() + 1, mode: state.mode });
     renderAnswerView(c, idx);
@@ -1345,11 +1366,12 @@
   function renderResults() {
     state.currentCaseId = null;
     var total = CASES.length;
-    var correct = correctCount();
-    var pct = Math.round(correct / total * 100);
-    track("finish", { correct: correct, total: total, pct: pct });
+    var firstCorrect = correctCount();
+    var firstPct = Math.round(firstCorrect / total * 100);
+    var correct = currentCorrectCount();
+    track("finish", { correct: firstCorrect, total: total, pct: firstPct });
     state.mode = "training";
-    state.finishedResult = { correct: correct, total: total, pct: pct };
+    state.finishedResult = { correct: firstCorrect, total: total, pct: firstPct };
     saveProgress();
 
     var wrap = el("div", "screen");
@@ -1360,8 +1382,11 @@
     score.appendChild(el("div", "final-score-number", correct + " из " + total));
     score.appendChild(el("div", "final-score-label", "верных ответов"));
     panel.appendChild(score);
+    if (state.correctedCaseIds.length) {
+      panel.appendChild(el("p", "review-note", "Первый результат: " + firstCorrect + " из " + total));
+    }
 
-    var wrong = state.answers.filter(function (a) { return !a.correct; });
+    var wrong = remainingWrongAnswers();
     if (!wrong.length) panel.appendChild(el("p", "final-perfect", "Все ответы верные"));
 
     var feedback = el("div", "final-feedback");
@@ -1403,8 +1428,7 @@
 
   // повторение ошибок: отдельный проход только по неверным кейсам
   function startReview() {
-    var wrongIds = state.answers.filter(function (a) { return !a.correct; })
-      .map(function (a) { return a.caseId; });
+    var wrongIds = remainingWrongAnswers().map(function (a) { return a.caseId; });
     state.mode = "review";
     state.reviewCases = CASES.filter(function (c) { return wrongIds.indexOf(c.id) >= 0; });
     state.reviewIndex = 0;
@@ -1429,7 +1453,7 @@
     score.appendChild(el("div", "final-score-number", correct + " из " + total));
     score.appendChild(el("div", "final-score-label", "верных ответов"));
     panel.appendChild(score);
-    panel.appendChild(el("p", "review-note", "Результат первого прохождения не изменился"));
+    panel.appendChild(el("p", "review-note", "Общий результат: " + currentCorrectCount() + " из " + CASES.length + " · Первый результат: " + correctCount() + " из " + CASES.length));
 
     var stillWrong = state.reviewCases.filter(function (c) {
       var ans = state.reviewAnswers.filter(function (a) { return a.caseId === c.id; })[0];
@@ -1449,7 +1473,7 @@
       panel.appendChild(again);
     }
 
-    var back = el("button", stillWrong.length ? "final-restart" : "btn btn-primary final-repeat", "К результатам первого прохождения");
+    var back = el("button", stillWrong.length ? "final-restart" : "btn btn-primary final-repeat", "К результатам");
     back.addEventListener("click", renderResults);
     panel.appendChild(back);
     wrap.appendChild(panel);
