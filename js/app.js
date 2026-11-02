@@ -1419,31 +1419,25 @@
     state.currentCaseId = null;
     var total = state.reviewCases.length || 0;
     var correct = state.reviewAnswers.filter(function (a) { return a.correct; }).length;
-    var pct = total ? Math.round(correct / total * 100) : 0;
     track("review_finish", { correct: correct, total: total });
 
     var wrap = el("div", "screen");
-    var panel = el("div", "results-panel");
+    var panel = el("div", "results-panel review-results");
+    panel.appendChild(el("h1", "final-title", "Вы повторили задания"));
 
-    var top = el("div", "results-top");
-    var left = el("div", "results-top-left");
-    left.appendChild(el("h1", "results-title", "Повторение ошибок"));
-    left.appendChild(el("p", "results-lead", "Вы прошли повторение по ошибочным кейсам. Оценка основного прохождения сохранена отдельно."));
-    top.appendChild(left);
-    var score = el("div", "results-score");
-    score.appendChild(el("span", "results-num", correct + " / " + total));
-    score.appendChild(el("span", "results-pct", pct + "%"));
-    top.appendChild(score);
-    panel.appendChild(top);
+    var score = el("div", "final-score");
+    score.appendChild(el("div", "final-score-number", correct + " из " + total));
+    score.appendChild(el("div", "final-score-label", "верных ответов"));
+    panel.appendChild(score);
+    panel.appendChild(el("p", "review-note", "Результат первого прохождения не изменился"));
 
     var stillWrong = state.reviewCases.filter(function (c) {
       var ans = state.reviewAnswers.filter(function (a) { return a.caseId === c.id; })[0];
       return !ans || !ans.correct;
     });
 
-    var actions = el("div", "results-actions");
     if (stillWrong.length > 0) {
-      var again = el("button", "btn btn-primary btn-md", "Повторить ошибки (" + stillWrong.length + ")");
+      var again = el("button", "btn btn-primary final-repeat", "Повторить " + taskCount(stillWrong.length));
       again.addEventListener("click", function () {
         state.reviewCases = stillWrong;
         state.reviewIndex = 0;
@@ -1452,17 +1446,12 @@
         state.answeredCurrent = false;
         renderQuiz();
       });
-      actions.appendChild(again);
-    } else {
-      var all = el("button", "btn btn-primary btn-md", "Отлично, все верно");
-      all.setAttribute("disabled", "disabled");
-      actions.appendChild(all);
+      panel.appendChild(again);
     }
-    var back = el("button", "btn btn-ghost btn-md", "К общим результатам");
-    back.addEventListener("click", renderResults);
-    actions.appendChild(back);
-    panel.appendChild(actions);
 
+    var back = el("button", stillWrong.length ? "final-restart" : "btn btn-primary final-repeat", "К результатам первого прохождения");
+    back.addEventListener("click", renderResults);
+    panel.appendChild(back);
     wrap.appendChild(panel);
     render(wrap);
   }

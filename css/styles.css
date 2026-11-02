@@ -2497,3 +2497,8 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
   font-size: 12px; font-weight: 600; line-height: 1.4;
   overflow-wrap: break-word;
 }
+
+/* Итог повторения */
+.review-results { max-width: 760px; }
+.review-note { margin: 16px 0 20px; text-align: center; color: #686273; font-size: 15px; line-height: 1.5; }
+.review-results .final-repeat { line-height: 1.35; }
