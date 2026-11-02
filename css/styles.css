@@ -2516,3 +2516,16 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
 .review-results { max-width: 760px; }
 .review-note { margin: 16px 0 20px; text-align: center; color: #686273; font-size: 15px; line-height: 1.5; }
 .review-results .final-repeat { line-height: 1.35; }
+
+/* Ограничиваем ширину блока примера на широком экране. */
+@media (min-width: 1001px) {
+  .quiz-layout { flex-wrap: nowrap; }
+  .quiz-layout .case-phone { flex: 0 0 340px; width: 340px; min-width: 0; }
+  .quiz-layout .phone { max-width: 100%; }
+  .quiz-layout .panel { min-width: 0; }
+}
+@media (min-width: 1001px) and (max-height: 720px) {
+  .quiz-layout .island { width: 30%; max-width: 118px; }
+  .quiz-layout .app-statusbar { padding-left: 16px; padding-right: 16px; font-size: 12px; }
+  .quiz-layout .status-icons { gap: 4px; font-size: 10px; }
+}
