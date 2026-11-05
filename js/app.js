@@ -1721,27 +1721,33 @@
     ico.innerHTML = feedbackBannerIcon();
     b.appendChild(ico);
 
-    var text = document.createElement("span");
+    var text = document.createElement("div");
     text.className = "feedback-banner-text";
-    text.appendChild(document.createTextNode("Привет! Тренажер пока в тестовом режиме. Оставить отзыв можно по кнопке «Отзыв» внизу экрана или "));
+    var intro = document.createElement("p");
+    intro.style.margin = "0";
+    intro.appendChild(document.createTextNode("Привет! Тренажер пока в тестовом режиме. Помоги сделать его лучше: оставляй комментарии и прикрепляй скриншоты прямо во время прохождения заданий. Для этого нажми "));
 
     var link = document.createElement("a");
     link.className = "feedback-banner-link";
     link.href = FEEDBACK_URL;
     link.target = "_blank";
     link.rel = "noopener";
-    link.textContent = nbspJoin("по ссылке");
+    link.textContent = "«Отзыв»";
     link.addEventListener("click", function () { track("feedback_banner_link"); });
-    text.appendChild(link);
+    intro.appendChild(link);
+    intro.appendChild(document.createTextNode(" внизу экрана 💜"));
+    text.appendChild(intro);
 
-    text.appendChild(document.createTextNode(". Если что-то сломалось — пиши в Тайм: "));
+    var help = document.createElement("p");
+    help.style.margin = "8px 0 0";
+    help.appendChild(document.createTextNode("Если что-то сломается, пиши мне в Тайм: "));
 
-    // URL контакта Тайма не подтверждён (доступен только хэндл @v.shesterova),
-    // поэтому оформляем как ссылку, но оставляем текстом.
+    // URL контакта Тайма не подтверждён, доступен только хэндл.
     var contact = document.createElement("span");
     contact.className = "feedback-banner-contact";
     contact.textContent = "v.shesterova";
-    text.appendChild(contact);
+    help.appendChild(contact);
+    text.appendChild(help);
 
     b.appendChild(text);
     return b;
