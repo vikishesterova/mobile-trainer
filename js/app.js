@@ -1740,7 +1740,7 @@
 
     var help = document.createElement("p");
     help.style.margin = "8px 0 0";
-    help.appendChild(document.createTextNode("Если что-то сломается, пиши мне в Тайм: "));
+    help.appendChild(document.createTextNode("Если что-то сломалось, пиши мне в Тайм: "));
 
     // URL контакта Тайма не подтверждён, доступен только хэндл.
     var contact = document.createElement("span");
