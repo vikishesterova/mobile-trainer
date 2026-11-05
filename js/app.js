@@ -1725,7 +1725,7 @@
     text.className = "feedback-banner-text";
     var intro = document.createElement("p");
     intro.style.margin = "0";
-    intro.appendChild(document.createTextNode("Привет! Тренажер пока в тестовом режиме. Помоги сделать его лучше: оставляй комментарии и прикрепляй скриншоты прямо во время прохождения заданий. Для этого нажми "));
+    intro.appendChild(document.createTextNode("Привет! Тренажер пока в тестовом режиме. Помоги сделать его лучше: оставляй комментарии и прикрепляй скриншоты прямо во время прохождения кейсов. Для этого нажми "));
 
     var link = document.createElement("a");
     link.className = "feedback-banner-link";
