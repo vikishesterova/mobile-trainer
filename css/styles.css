@@ -2056,7 +2056,12 @@ body {
    Экраны заданий и разборов — компактнее
    ============================================================================ */
 /* телефон подстраивается под высоту окна, сохраняя пропорции */
-.phone { width: auto; height: min(660px, calc(100vh - 96px)); aspect-ratio: 330 / 640; }
+.phone {
+  --phone-height: min(660px, calc(100vh - 96px));
+  width: calc(var(--phone-height) * 0.515625);
+  height: var(--phone-height);
+  flex-shrink: 0;
+}
 /* закрепляется весь блок: телефон + переключатель «Было/Стало» держатся вместе */
 .case-phone { position: sticky; top: 16px; }
 
@@ -2480,7 +2485,11 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
 @media (min-width: 701px) and (max-width: 1000px) {
   .quiz-layout { flex-direction: row; flex-wrap: nowrap; align-items: flex-start; gap: 24px; }
   .quiz-layout .case-phone { position: sticky; top: 16px; flex: 0 0 35%; width: 35%; min-width: 0; }
-  .quiz-layout .phone { width: min(100%, 330px, calc(51.5625vh - 70px)); height: auto; aspect-ratio: 330 / 640; }
+  .quiz-layout .phone {
+    --phone-height: min(640px, calc(100vh - 136px), calc(67.878788vw - 42.666667px));
+    width: calc(var(--phone-height) * 0.515625);
+    height: var(--phone-height);
+  }
   .quiz-layout .island { width: 36%; max-width: 118px; }
   .quiz-layout .app-statusbar { padding-left: 16px; padding-right: 16px; font-size: 12px; }
   .quiz-layout .panel { flex: 1 1 0; width: auto; min-width: 0; max-width: 560px; }
@@ -2488,7 +2497,11 @@ a:focus-visible, button:focus-visible, .option:focus-visible,
 /* В колонке телефон прокручивается вместе со страницей и не закрывает задание. */
 @media (max-width: 700px) {
   .quiz-layout .case-phone { position: static; }
-  .quiz-layout .phone { width: min(330px, calc(100vw - 28px), calc(51.5625vh - 49.5px)); height: auto; aspect-ratio: 330 / 640; }
+  .quiz-layout .phone {
+    --phone-height: min(640px, calc(100vh - 96px), calc(193.939394vw - 54.303031px));
+    width: calc(var(--phone-height) * 0.515625);
+    height: var(--phone-height);
+  }
 }
 @media (max-width: 700px) {
   .final-results { padding: 24px 18px; }
