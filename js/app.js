@@ -70,7 +70,11 @@
     try {
       var mid = window.METRIKA_ID || "";
       if (typeof window.ym === "function" && /^\d+$/.test(mid)) {
+        // основная цель (работает, если цель создана в кабинете с таким ID)
         window.ym(mid, "reachGoal", name, data || {});
+        // запасной «визит» на виртуальный URL — событие сохранится,
+        // даже если цель ещё не создана в Метрике (видно как /…#/event/<name>)
+        window.ym(mid, "hit", location.pathname + "#/event/" + name, { params: data || {} }, name);
       }
     } catch (e) {}
     try {
